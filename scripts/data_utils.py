@@ -3,7 +3,7 @@ import os
 import json
 import requests
 
-DATA = "data"
+DATA = "../data"
 
 fetch_templates = {
 	"aat": "https://data.getty.edu/vocab/{vocab}/{ident}",

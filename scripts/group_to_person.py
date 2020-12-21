@@ -7,8 +7,8 @@ from identifiers import DB
 from data_utils import fetch, get_wikidata_entity
 
 nss = {'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'}
-src = 'data/ycba/linked_art/group'
-dest = 'data/ycba/linked_art/person'
+src = '../data/ycba/linked_art/group'
+dest = '../data/ycba/linked_art/person'
 
 def group_to_person(js, fn):
 	# easiest to do this in the JSON as otherwise it means recreating objects

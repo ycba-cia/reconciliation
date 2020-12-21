@@ -11,8 +11,8 @@ import shutil
 
 model.factory.auto_assign_id = False
 
-source = "data/ycba/linked_art/place"
-output = "output"
+source = "../data/ycba/linked_art/place"
+output = "../output"
 
 languages = get_languages()
 

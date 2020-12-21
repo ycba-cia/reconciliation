@@ -5,9 +5,9 @@ import os
 
 mappings = {}
 
-maps = os.listdir('mappings')
+maps = os.listdir('../data/mappings')
 for m in maps:
-	fh = open(f'mappings/{m}')
+	fh = open(f'../data/mappings/{m}')
 	mappings[m[:-5]] = json.load(fh)
 	fh.close()
 

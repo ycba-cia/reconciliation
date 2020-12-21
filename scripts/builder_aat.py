@@ -9,8 +9,8 @@ from data_utils import entity_templates
 
 model.factory.auto_assign_id = False
 
-source = "data/aat"
-dest = "output"
+source = "../data/aat"
+dest = "../output"
 
 classifications = {
 	"http://vocab.getty.edu/term/type/UsedForTerm": map_uuid("aat", "300417478"),

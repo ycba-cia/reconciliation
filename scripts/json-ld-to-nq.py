@@ -9,8 +9,8 @@ import json
 import datetime
 import pathlib
 
-sources = ['data/ycba/linked_art', 'output']
-output = 'nquads'
+sources = ['../data/ycba/linked_art', '../output']
+output = '../nquads'
 
 proc = jsonld.JsonLdProcessor()
 

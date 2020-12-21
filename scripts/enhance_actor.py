@@ -8,8 +8,8 @@ import datetime
 
 model.factory.auto_assign_id = False
 
-sources = ['data/ycba/linked_art/person', 'data/ycba/linked_art/group']
-dests = ['output/person', 'output/group']
+sources = ['../data/ycba/linked_art/person', '../data/ycba/linked_art/group']
+dests = ['../output/person', '../output/group']
 
 rdr = reader.Reader()
 
