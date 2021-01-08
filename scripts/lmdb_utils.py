@@ -52,11 +52,13 @@ class LMCursor(object):
 
 class LMDB(object):
 
-	def __init__(self, dbname, open=False):
+	def __init__(self, dbname, open=False, map_size=0):
 		self.name = dbname
 		self.env = None
 		self.cxn = None
-		self.map_size = int(1e9)  # 1 GB
+		if not map_size:
+			map_size = int(1e9)  # 1 GB
+		self.map_size = map_size
 		if open:
 			self.open()
 
