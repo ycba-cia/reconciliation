@@ -8,7 +8,7 @@ class LMCursor(object):
 	_database = None
 	_cursor = None
 
-	def __init__(self, db, cur, prefix):
+	def __init__(self, db, cur, prefix=''):
 		self._database = db
 		self._cursor = cur
 		self._prefix = prefix
@@ -56,6 +56,7 @@ class LMDB(object):
 		self.name = dbname
 		self.env = None
 		self.cxn = None
+		self.auto_truncate_keys = True
 		if not map_size:
 			map_size = int(1e9)  # 1 GB
 		self.map_size = map_size
@@ -83,6 +84,11 @@ class LMDB(object):
 			key = key.encode('utf-8')
 		elif type(key) != bytes:
 			raise ValueError("Key must be str or bytes")
+		if len(key) > 512:
+			if self.auto_truncate_keys:
+				key = key[:511] + "+"
+			else:
+				raise ValueError(f"Key length is > 512: {key}")
 		if type(value) == str:
 			value = value.encode('utf-8')
 		return self.cxn.put(key, value)
@@ -92,6 +98,10 @@ class LMDB(object):
 			key = key.encode('utf-8')
 		elif type(key) != bytes:
 			raise ValueError('Key must be str or bytes')
+		if len(key) > 512 and self.auto_truncate_keys:
+			key = key[:511] + "+"
+		else:
+			raise ValueError(f"Key length is > 512: {key}")
 		value = self.cxn.get(key)
 		if not value:
 			return value
@@ -140,4 +150,4 @@ class LMDB(object):
 	def __iter__(self):
 		c = self.cursor()
 		c.first()
-		return iter(LMCursor(self, c))
+		return iter(c)

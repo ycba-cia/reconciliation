@@ -20,7 +20,7 @@ vocab.register_vocab_class("ReproductionStatement", {'parent': model.LinguisticO
 
 
 DEBUG = True
-NO_OVERWRITE = False
+NO_OVERWRITE = True
 
 model.factory.auto_assign_id = False
 if not DEBUG:
@@ -41,6 +41,8 @@ class NameUuidDB(LMDB):
 		# name --> uuid, and generate a uuid if not present
 		# ensure key is lowercase and stripped
 		key = key.strip().lower()
+		if len(key) == 0:
+			return None
 		val = LMDB.get(self, key)
 		if not val:
 			val = str(uuid.uuid4())
@@ -54,7 +56,7 @@ class NameUuidDB(LMDB):
 
 counts = {}
 
-person_map = NameUuidDB('lux_person_db', open=True, map_size=int(2e9))
+person_map = NameUuidDB('lux_person_db', open=True, map_size=int(4e9))
 group_map = NameUuidDB('lux_group_db', open=True, map_size=int(2e9))
 type_map = NameUuidDB('lux_type_db', open=True, map_size=int(2e9))   # including material, language, type, currency, unit
 place_map = NameUuidDB('lux_place_db', open=True, map_size=int(2e9))
@@ -603,7 +605,11 @@ def construct_facet(facet):
 	name_map = name_maps.get(what.__class__, None)
 	if name_map is not None:
 		name = what.identified_by[0].content
-		u = name_map[name]  # such a simple line...
+		try:
+			u = name_map[name]  # such a simple line...
+		except:
+			print(f"Trying: '{name}' in {name_map}")
+			raise
 		what.id = f"urn:uuid:{u}"
 
 	rolel = facet.get('facet_role_label', '').lower()
@@ -619,8 +625,6 @@ def construct_facet(facet):
 
 
 def transform_json(record, fn):
-	#sys.stdout.write('.')
-	#sys.stdout.flush()
 
 	###  record
 	# The only thing we really care about is the identifier, which goes to the URI
