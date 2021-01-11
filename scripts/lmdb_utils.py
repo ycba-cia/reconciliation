@@ -98,7 +98,7 @@ class LMDB(object):
 			key = key.encode('utf-8')
 		elif type(key) != bytes:
 			raise ValueError('Key must be str or bytes')
-		if len(key) > 512
+		if len(key) > 512:
 			if self.auto_truncate_keys:
 				key = key[:511] + "+"
 			else:
