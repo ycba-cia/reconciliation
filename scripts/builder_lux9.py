@@ -17,10 +17,23 @@ vocab.register_vocab_class("CallNumber", {"parent": model.Identifier, "id": "300
 vocab.register_vocab_class("Performance", {"parent": model.Activity, "id": "300069200", "label": "Performance"})
 vocab.register_vocab_class("AttributionStatement", {"parent": model.LinguisticObject, "id": "300056109", "label": "Attribution Statement", "metatype": "brief text"})
 vocab.register_vocab_class("ReproductionStatement", {'parent': model.LinguisticObject, "id":"300411336", "label": "Reproduction Statement", "metatype": "brief text"})
+vocab.register_vocab_class("CartographicStatement", {'parent': model.LinguisticObject, 'id':'300053163', 'label': "Cartography Note", 'metatype': 'brief text'})
+# Note that 28052 is used below for maps/globes/atlases supertype, and don't want them to collide
+# vocab.register_vocab_class("LanguageStatement", {'parent': model.LinguisticObject, 'id':'300435433', 'label': "Languages Note", 'metatype': 'brief text'})
+vocab.register_vocab_class('IndexingStatement', {'parent': model.LinguisticObject, 'id':'300054640', 'label': "Indexes Note", 'metatype': 'brief text'})
+vocab.register_vocab_class('PreferCiteNote', {'parent': model.LinguisticObject, 'id':'300311705', 'label': "Preferred Citation Note", 'metatype': 'brief text'})
+# Note that 311705 is also Citation ... so can't distinguish a note about citations of this thing (but is that bibliography?) vs how to cite this thing
+vocab.register_vocab_class('ArrangementNote', {'parent': model.LinguisticObject, 'id':'300XXXXX2', 'label': "Contents Organization/Arrangement Note", 'metatype': 'brief text'})
+vocab.register_vocab_class('DigitalFileNote', {'parent': model.LinguisticObject, 'id':'300266011', 'label': "Digital Characteristics Note", 'metatype': 'brief text'})
+vocab.register_aat_class("SeparatedMaterialStatement", {"parent": model.LinguisticObject, "id": "300053748", "label": "Separated Material", "brief": True, })
+vocab.register_aat_class("ProcessingInfoStatement", {"parent": model.LinguisticObject, "id": "300077565", "label": "Processing Information", "brief": True, })
+vocab.register_aat_class("PhysTechStatement", {"parent": model.LinguisticObject, "id": "300221194", "label": "Physical Properties and Technical Requirements", "brief": True, })
+vocab.register_aat_class("AccrualsStatement", {"parent": model.LinguisticObject, "id": "300055458", "label": "Accruals", "brief": True, })
+vocab.register_aat_class("PhysicalLocationStatement", {"parent": model.LinguisticObject, "id": "300248479", "label": "Location", "brief": True, })
 
 
-DEBUG = True
-NO_OVERWRITE = True
+DEBUG = False
+NO_OVERWRITE = False
 
 model.factory.auto_assign_id = False
 if not DEBUG:
@@ -80,38 +93,6 @@ name_maps = {
 	model.MeasurementUnit: type_map
 }
 
-
-st_uri = {'Collages': 'http://vocab.getty.edu/aat/300033963', 'Drawings': 'http://vocab.getty.edu/aat/300033973', 
-	'Installations': 'http://vocab.getty.edu/aat/300047896', 'Paintings': 'http://vocab.getty.edu/aat/300033618', 
-	'Photographs': 'http://vocab.getty.edu/aat/300046300', 'Prints': 'http://vocab.getty.edu/aat/300041273', 
-	'Sculptures': 'http://vocab.getty.edu/aat/300047090', 'Pamphlets': 'http://vocab.getty.edu/aat/300220572', 
-	'Maps': 'http://vocab.getty.edu/aat/300028094', 'Globes': 'http://vocab.getty.edu/aat/300028089', 
-	'Atlases': 'http://vocab.getty.edu/aat/300028053', 'Cartography': 'http://vocab.getty.edu/aat/300028052', 
-	'Realia': 'http://id.loc.gov/vocabulary/marcgt/rea', 'Animals': 'http://vocab.getty.edu/aat/300249395', 
-	'Fossils': 'http://vocab.getty.edu/aat/300247919', 'Plants': 'http://vocab.getty.edu/aat/300132360', 
-	'Minerals': 'http://vocab.getty.edu/aat/300011068', 'Meteorites': 'http://vocab.getty.edu/aat/300266159', 
-	'Specimens': 'http://vocab.getty.edu/aat/300235576', 'Audio': 'http://vocab.getty.edu/aat/300028633', 
-	'Models': 'http://vocab.getty.edu/aat/300247279', 'Slides': 'http://vocab.getty.edu/aat/300128371', 
-	'Databases and Software': 'http://vocab.getty.edu/aat/300266679', 'Archival and Manuscript Material': 'x1', 
-	'Kits': 'http://vocab.getty.edu/aat/300247921', 'Arms and Armor': 'x2', 'Wall Drawings': 'http://vocab.getty.edu/aat/300438620', 
-	'Sound Devices': 'http://vocab.getty.edu/aat/300387677', 'Ritual Objects': 'http://vocab.getty.edu/aat/300312158', 
-	'Calligraphy': 'http://vocab.getty.edu/aat/300266660', 'Jewelry': 'http://vocab.getty.edu/aat/300209286', 
-	'Flatware': 'http://vocab.getty.edu/aat/300199800', 'Time-Based Media': 'http://vocab.getty.edu/aat/300185191', 
-	'Masks': 'http://vocab.getty.edu/aat/300138758', 'Numismatics': 'http://vocab.getty.edu/aat/300054419', 
-	'Containers': 'http://vocab.getty.edu/aat/300045611', 'Timepieces': 'http://vocab.getty.edu/aat/300041573', 
-	'Furniture': 'http://vocab.getty.edu/aat/300037680', 'Lighting Devices': 'http://vocab.getty.edu/aat/300037581', 
-	'Furnishings': 'http://vocab.getty.edu/aat/300037335', 'Posters': 'http://vocab.getty.edu/aat/300027221', 
-	'Notated Music': 'http://vocab.getty.edu/aat/300417622', 'Datasets': 'http://vocab.getty.edu/aat/300312038', 
-	'Clothing and Dress': 'http://vocab.getty.edu/aat/300266639', 'Text': 'http://vocab.getty.edu/aat/300263751', 
-	'Toys and Games': 'http://vocab.getty.edu/aat/300218781', 'Journals': 'http://vocab.getty.edu/aat/300215390', 
-	'Equipment': 'http://vocab.getty.edu/aat/300122241', 'Decorative Arts': 'http://vocab.getty.edu/aat/300054168', 
-	'Moving Images': 'http://vocab.getty.edu/aat/300054168', 'Software': 'http://vocab.getty.edu/aat/300028566', 
-	'Databases': 'http://vocab.getty.edu/aat/300028543', 'Books': 'http://vocab.getty.edu/aat/300028051', 
-	'Theses and Dissertations': 'http://vocab.getty.edu/aat/300028028', 'Newspapers': 'http://vocab.getty.edu/aat/300026656', 
-	'Tools and Equipment': 'http://vocab.getty.edu/aat/300022238', 'Textiles': 'http://vocab.getty.edu/aat/300014063', 
-	'Two-Dimensional Objects': 'http://vocab.getty.edu/aat/300010332', 'Three-Dimensional Objects': 'http://vocab.getty.edu/aat/300010331', 
-	'Architectural Elements': 'http://vocab.getty.edu/aat/300000885', 'Periodicals': 'http://vocab.getty.edu/aat/300026657'}
-
 st_to_class = {
 	"Archival and Manuscript Material": model.Set,
 	"Databases and Software": model.DigitalObject,
@@ -151,6 +132,88 @@ agent_type_to_class = {
 }
 
 
+note_type_class = {
+	"245c": vocab.AttributionStatement,
+	'255': vocab.CartographicStatement,	
+	"300": vocab.PhysicalStatement,
+	'347': vocab.DigitalFileNote,
+	'351': vocab.ArrangementNote,
+	'382': vocab.MaterialStatement, # medium of performance -- material is also technique
+	'500': None,
+	'504': vocab.BibliographyStatement,
+	'510': vocab.Citation,
+	'516': vocab.DigitalFileNote,
+	'520': vocab.Abstract,
+	'524': vocab.PreferCiteNote, 
+	'533': vocab.ReproductionStatement,
+	'545': vocab.BiographyStatement,
+	'546': vocab.LanguageStatement,
+	'555': vocab.IndexingStatement,
+	'561': vocab.ProvenanceStatement,
+	'590': None,
+	'note': None,
+	'curatorial comment': None,
+	'cataloguing': None,
+	'odd': None,
+	'mark(s)': vocab.MarkingsStatement,
+	'signed': vocab.SignatureStatement,
+	'description': vocab.Description,
+	'container': vocab.PhysicalLocationStatement,
+	'physdesc': vocab.PhysicalStatement,
+	'scopecontent': vocab.Description,
+	'abstract': vocab.Abstract,
+	'prefercite': vocab.PreferCiteNote,
+	'bioghist': vocab.BiographyStatement,
+	'arrangement': vocab.ArrangementNote,
+	'relatedmaterial': None,
+	'materialspec': None,
+	'altformavail': None,
+	'otherfindaid': None,
+	'fileplan': None,
+	'separatedmaterial': vocab.SeparatedMaterialStatement,
+	'langmaterial': vocab.LanguageStatement,
+	'processinfo': vocab.ProcessingInfoStatement,
+	'physloc': vocab.PhysicalLocationStatement,
+	'phystech': vocab.PhysTechStatement,
+	'appraisal': vocab.ConditionStatement,
+	'originalsloc': None,
+	'index': vocab.IndexingStatement,
+	'accruals': vocab.AccrualsStatement,
+	'bibliography': vocab.BibliographyStatement
+}
+
+
+st_uri = {'Collages': 'http://vocab.getty.edu/aat/300033963', 'Drawings': 'http://vocab.getty.edu/aat/300033973', 
+	'Installations': 'http://vocab.getty.edu/aat/300047896', 'Paintings': 'http://vocab.getty.edu/aat/300033618', 
+	'Photographs': 'http://vocab.getty.edu/aat/300046300', 'Prints': 'http://vocab.getty.edu/aat/300041273', 
+	'Sculptures': 'http://vocab.getty.edu/aat/300047090', 'Pamphlets': 'http://vocab.getty.edu/aat/300220572', 
+	'Maps': 'http://vocab.getty.edu/aat/300028094', 'Globes': 'http://vocab.getty.edu/aat/300028089', 
+	'Atlases': 'http://vocab.getty.edu/aat/300028053', 'Cartography': 'http://vocab.getty.edu/aat/300028052', 
+	'Realia': 'http://id.loc.gov/vocabulary/marcgt/rea', 'Animals': 'http://vocab.getty.edu/aat/300249395', 
+	'Fossils': 'http://vocab.getty.edu/aat/300247919', 'Plants': 'http://vocab.getty.edu/aat/300132360', 
+	'Minerals': 'http://vocab.getty.edu/aat/300011068', 'Meteorites': 'http://vocab.getty.edu/aat/300266159', 
+	'Specimens': 'http://vocab.getty.edu/aat/300235576', 'Audio': 'http://vocab.getty.edu/aat/300028633', 
+	'Models': 'http://vocab.getty.edu/aat/300247279', 'Slides': 'http://vocab.getty.edu/aat/300128371', 
+	'Databases and Software': 'http://vocab.getty.edu/aat/300266679', 'Archival and Manuscript Material': 'x1', 
+	'Kits': 'http://vocab.getty.edu/aat/300247921', 'Arms and Armor': 'x2', 'Wall Drawings': 'http://vocab.getty.edu/aat/300438620', 
+	'Sound Devices': 'http://vocab.getty.edu/aat/300387677', 'Ritual Objects': 'http://vocab.getty.edu/aat/300312158', 
+	'Calligraphy': 'http://vocab.getty.edu/aat/300266660', 'Jewelry': 'http://vocab.getty.edu/aat/300209286', 
+	'Flatware': 'http://vocab.getty.edu/aat/300199800', 'Time-Based Media': 'http://vocab.getty.edu/aat/300185191', 
+	'Masks': 'http://vocab.getty.edu/aat/300138758', 'Numismatics': 'http://vocab.getty.edu/aat/300054419', 
+	'Containers': 'http://vocab.getty.edu/aat/300045611', 'Timepieces': 'http://vocab.getty.edu/aat/300041573', 
+	'Furniture': 'http://vocab.getty.edu/aat/300037680', 'Lighting Devices': 'http://vocab.getty.edu/aat/300037581', 
+	'Furnishings': 'http://vocab.getty.edu/aat/300037335', 'Posters': 'http://vocab.getty.edu/aat/300027221', 
+	'Notated Music': 'http://vocab.getty.edu/aat/300417622', 'Datasets': 'http://vocab.getty.edu/aat/300312038', 
+	'Clothing and Dress': 'http://vocab.getty.edu/aat/300266639', 'Text': 'http://vocab.getty.edu/aat/300263751', 
+	'Toys and Games': 'http://vocab.getty.edu/aat/300218781', 'Journals': 'http://vocab.getty.edu/aat/300215390', 
+	'Equipment': 'http://vocab.getty.edu/aat/300122241', 'Decorative Arts': 'http://vocab.getty.edu/aat/300054168', 
+	'Moving Images': 'http://vocab.getty.edu/aat/300054168', 'Software': 'http://vocab.getty.edu/aat/300028566', 
+	'Databases': 'http://vocab.getty.edu/aat/300028543', 'Books': 'http://vocab.getty.edu/aat/300028051', 
+	'Theses and Dissertations': 'http://vocab.getty.edu/aat/300028028', 'Newspapers': 'http://vocab.getty.edu/aat/300026656', 
+	'Tools and Equipment': 'http://vocab.getty.edu/aat/300022238', 'Textiles': 'http://vocab.getty.edu/aat/300014063', 
+	'Two-Dimensional Objects': 'http://vocab.getty.edu/aat/300010332', 'Three-Dimensional Objects': 'http://vocab.getty.edu/aat/300010331', 
+	'Architectural Elements': 'http://vocab.getty.edu/aat/300000885', 'Periodicals': 'http://vocab.getty.edu/aat/300026657'}
+
 agent_roles_translations = {
 	"acteur": "actor",
 	"auteur": "author",
@@ -188,276 +251,285 @@ agent_roles_translations = {
 	"comp": "composer",
 	"architects": "architect",
 	'co-author': "author",
+	"publishers": "publisher",
+	"pub": "publisher",
+	'binders': 'binder',
+	"onscreen presenter": "on-screen presenter",
+	"onscreen participant": "on-screen participant",
+	"wood engraver": "wood-engraver",
+	"metal engraver": "metal-engraver",
+	"writer": "author",
+	"collaborator" : "contributor",
+	"maker": "creator",
+	'binding designers': "binding designer",
+	'bookjacket designer': "book jacket designer",
+	"cast": "actor",
+	"cast member": "actor",
+	"director of photography": "cinematographer",
+	"respondant": "respondent",
+	"defendent": "defendant",
+	"honouree": "honoree",
 }
 
 agent_roles_production = {
-	"creator": "",
-	"contributor" : "",
-	"author": "",
-	"artist": "",
-	"maker": "",
-	"collaborator" : "",
-	'originator': "",
-	"writer": "",
+	"creator": "aat:300386174",
+	"contributor" : "aat:300403974",
+	"author": "aat:300025492",
+	"artist": "aat:300025103",
+	'originator': "aat:300386177",
+	"fabricator": "aat:300251917",
+	"editor": "aat:300025526",
+	"compiler": "aat:300121766",
+	"illustrator": "aat:300025123",
+	"abridger": "aat:300440753",
+	"cartographer": "aat:300025593",
+	"arranger": "aat:300025667",
+	"translator": "aat:300025601",
+	"lyricist": "aat:300025675",
+	"composer": "aat:300025671",
+	"calligrapher": "aat:300025107",
+	"adapter": "aat:300410355",
+	"printer": "aat:300025732",
+	"printer_GROUP": "aat:300386347",
+	"carver": "aat:300025256",
+	"engraver": "aat:300239410",
+	"wood-engraver": "aat:300025167",
+	"lithographer": "aat:300025175",
+	"etcher": "aat:300025174",
+	"decorator": "aat:300435238",
+	"sculptor": "aat:300025181",
+	"inscriber": "aat:300121785",
+	"modeler": "aat:300025417",
+	"woodcutter": "aat:300025178",
+	"printmaker": "aat:300025164",
+	"printmaker_GROUP": "aat:300312299",
+	"printer of plates": "aat:300025733",
+	'photographer': "aat:300025687",
+	'mint': "aat:300205362",  # minters, people as opposed to the building which is 300006031
+	'manufacturer': "aat:300025230",
+	'typographer': "aat:300025745",
+	'stereotyper': "aat:300025743",
+	'designer': "aat:300025190",
+	'typesetter': "aat:300025744",
+	'compositor': "aat:300025708",
+	'architect': "aat:300024987",
+	'architect_GROUP': "aat:300312082",
+	'inventor': "aat:300025845",
+	'type designer': "aat:300417840",
+	'letterer': "aat:300025115",
+	'colorist': "aat:300435165",
+	'binder': "aat:300025704",
+	'papermaker': "aat:300025344",
+	'scribe': "aat:300025580",
+	'screenwriter': "aat:300025515",
+	'adapter': "aat:300410355",
+	'bookbinder': "aat:300025704",
+	'transcriber': "aat:300440751",
+	'copyist': "aat:300025189",
+	'draftsman': "aat:300112172",
+	'illuminator': 'aat:300025122',
+	"paper maker": "aat:300025344",
+	"animator": "aat:300025646",
+	"proofreader": "aat:300418027v",
+	"chromo-lithographer": "aat:300251177",
+	"book artist": "aat:300386346",
+	"clockmaker": "aat:300025397",
+	"potter": "aat:300025414",
+	"gilder": "aat:300025261",
+	"diesinker": "aat:300386327",
 
-	"fabricator": "",
-	"editor and translator": "",
-	"editor": "",
 	"editor in chief": "",
-	"compiler": "",
-	"illustrator": "",
-	"abridger": "",
-	"cartographer": "",
-	"arranger": "",
-	"translator": "",
-	"lyricist": "",
-	"composer": "",
-	"calligrapher": "",
-	"adapter": "",
-	"printer": "",
-	"carver": "",
-	"engraver": "",
-	"wood engraver": "",
-	"wood-engraver": "",
-	"metal engraver": "",
-	"metal-engraver": "",
-	"lithographer": "",
-	"etcher": "",
-	"decorator": "",
-	"diesinker": "",
-	"sculptor": "",
-	"inscriber": "",
-	"modeler": "",
-	"woodcutter": "",
-	"printmaker": "",
-	"printer of plates": "",
-	'photographer': "",
-	'mint': "",
-	'manufacturer': "",
-	'typographer': "",
 	'electrotyper': "",
-	'stereotyper': "",
-	'designer': "",
-	'typesetter': "",
-	'compositor': "",
-	'architect': "",
-	'inventor': "",
 	'book designer': "",
 	'bookplate designer': "",
 	'cover designer': "",
-	'bookjacket designer': "",
 	'book jacket designer': '',
-	'type designer': "",
 	'binding designer': "",
-	'binding designers': "",
-	'letterer': "",
-	'colorist': "",
 	'organizer': "",
 	'book producer': "",
-	'binder': "",
-	'binders': '',
-	'papermaker': "",
-	'fore-edge painter': "",
-	'scribe': "",
-	'screenwriter': "",
-	'adapter': "",
-	'bookbinder': "",
-	'transcriber': "",
-	'copyist': "",
-	'draftsman': "",
 	'mounter': "",
-	'illuminator': '',
-	"paper engineer": "",
-	"paper maker": "",
+	'fore-edge painter': "",  # aat:300263620 is the technique fore-edge painting
+	"paper engineer": "",  # aat:300260338 is the technique
 	"collotyper": "",
-	"animator": "",
-	"proofreader": "",
 	"series editor": "",
-	"chromo-lithographer": "",
-	"playing card maker": "",
-	"book artist": "",
+	"casemaker": "",
+	"repairer": "",
+	"metal-engraver": "",	
 	"penciller": "",
 	"inker": "",
 	"cover artist": "",
 	"after": "",
-	"clockmaker": "",
-	"potter": "",
-	"gilder": "",
-	"casemaker": "",
-	"repairer": ""
+	"playing card maker": "",
 }
 
 agent_roles_sponsor = {
-	"commissioned by": "",
-	"sponsor": "",
-	"sponsoring body": "",
-	"host institution": "",
+	"commissioned by": "aat:300400903",
+	"sponsor": "aat:300188572",
+	"sponsoring body": "aat:300400903",
 	"degree granting institution": "",
-	"commissioning body": "",
-	"funder": "",
-	"funder/sponsor": "",
-	"sponsoring institution": "",
-	"degree supervisor": ""
+	"commissioning body": "aat:300400903",
+	"funder": "aat:300188572",
+	"funder/sponsor": "aat:300188572",
+	"sponsoring institution": "aat:300188572",
+	"degree supervisor": "",
+	"host institution": "",
 }
 
 agent_roles_publication = {
-	"publisher": "",
-	"publishers": "",
-	"pub": "",
-	"issuing body": "",
-	"distributor": "",
-	"bookseller": "",
-	"retailer": "",
-	"enacting jurisdiction": "",
-	"broadcaster": "",
+	"publisher": "aat:300025574",
+	"publisher_GROUP": "aat:300386627", 
+	"issuing body": "aat:300386627",
+	"distributor": "aat:300404885",
+	"bookseller": "aat:300025244",
+	"retailer": "aat:300025246",
+	"broadcaster": "aat:300025502",
 	"film distributor": "",
 	"issuer": "",
-	"bank": ""
+	"bank": "",
+	"enacting jurisdiction": "",
 }
 
 agent_roles_performance = {
-	"performer": "",
-	"conductor": "",
-	"librettist": "",
-	"singer": "",
-	"tenor": "",
-	"soprano": "",
-	"boy soprano": "",
-	"narrator": "",
-	"pianist": "",
-	"musician": "",
-	"orchestra": "",
-	"stage director": "",
-	"violoncellist": "",
-	"director": "",
-	"actor": "",
-	"film director": "",
-	"television director": "",
-	"producer": "",
+	"performer": "aat:300068931",
+	"conductor": "aat:300025672",
+	"librettist": "aat:300025674",
+	"singer": "aat:300025684",
+	"tenor": "aat:300206746", # the range not a role but close enough
+	"soprano": "aat:300206741",
+	"narrator": "aat:300417254",
+	"pianist": "aat:300235018",
+	"musician": "aat:300025666",
+	"orchestra": "aat:300025666", # musician
+	"stage director": "300312210",
+	"violoncellist": "aat:300235047",
+	"director": "aat:300025654",
+	"actor": "aat:300025658",
+	"film director": "aat:300312209",
+	"producer": "aat:300197742",
+	"dancer": "aat:300025653",
+	"choreographer": "aat:300025649",
+	"vocalist": "aat:300025684",  # same as singer
+	"instrumentalist": "aat:300162131",
+	"cinematographer": "aat:300025650",
+	"film editor": "aat:300386237",
+	"production company": "aat:300419391",
+	"lighting designer": "aat:300386275",
+	"costume designer": "aat:300163428",
+	"bass": "aat:300206743",
+	"violist": "aat:300235045",
+	"guitarist": "aat:300235042",
+	"set designer": "aat:300435127",
+	"trumpet player": "aat:300235064",
+	"organist": "aat:300235015",
+	"film producer": "aat:300312211",
+	"production designer": "aat:300435129",
+	"videographer": "aat:300263895",
+	"filmmaker": "aat:300075154",
+
+	"on-screen presenter": "",
+	"on-screen participant": "",
+	"script": "",
 	"interviewer": "",
 	"interpreter": "",
 	"interviewee": "",
 	"praeses": "",
 	"saxophonist": "",
-	"cast": "",
-	"dancer": "",
-	"choreographer": "",
-	"vocalist": "",
-	"instrumentalist": "",
 	"production personnel": "",
 	"production": "",
-	"cinematographer": "",
-	"film editor": "",
 	"camera": "",
+	"television director": "",	
 	"television producer": "",
-	"production company": "",
-	"costume designer": "",
-	"lighting designer": "",
-	"costume designer": "",
-	"bass": "",
-	"violist": "",
 	"hornist": "",
-	"guitarist": "",
 	"trombonist": "",
-	"set designer": "",
-	"lighting designer": "",
 	"recording engineer": "",
 	"stage manager": "",
-	"trumpet player": "",
-	"organist": "",
 	"video designer": "",
 	"direction": "",
 	"music": "",
 	"clarinet": "",
-	"film producer": "",
-	"director of photography": "",
+	"boy soprano": "",
 	"voice actor": "",
-	"filmmaker": "",
-	"on-screen presenter": "",
-	"on-screen participant": "",
-	"cast member": "",
-	"script": "",
-	"production designer": "",
-
 }
 
 agent_roles_encounter = {
-	"collector": "",
+	"collector": "aat:300025234",
 	"art collector": "",
-	"expedition": "",
-	"discoverer": ""
+	"expedition": "", # aat:300069799
+	"discoverer": "" # aat:300404386 
 }
 
 agent_roles_provenance = {
-	"donor": "",
-	"owner": "",
-	"former owner": "",
-	"client": "",
-	"patron": "",
-	"source": "",
-	"copyright holder": "",
-	"auctioneer": "",
-	"licensor": "",
+	"donor": "aat:300025240",
+	"owner": "aat:300203630",
 	"current owner": "",
-	"purchaser": "",
-	"vendor": "",
-	"exchanger": "",
+	"former owner": "",
+	"previous owner": "",	
 	"land owner": "",
-	"previous owner": "",
+	"client": "aat:300025833",
+	"patron": "aat:300115251",
+	"auctioneer": "aat:300025208",
+	"commissaire-priseur": "aat:300412173",	
+	"purchaser": "aat:300025211",
+	"vendor": "aat:300150791",
+	"exchanger": "",
+	"licensor": "",
 	"licensee": "",
-	"commissaire-priseur": ""
+	"source": "",
+	"copyright holder": "",	
 }
 
 agent_roles_exhibition = {
-	"borrower": "",
+	"borrower": "aat:300311675",
 	"exhibition": "",
 	"lender": ""
 }
 
 agent_roles_other = {
-	"correspondent": "",
+	"correspondent": "aat:300225705",
+	"judge": "aat:300025625",
+	"plaintiff": "aat:300440758",
+	"dedicatee": "aat:300121765",
+	"curator": "aat:300025633c",
+	"magistrate": "aat:300025467",
+	"proprietor": "aat:300025241",
+	"advertiser": "aat:300252554",
+	"signer": "aat:300137375",
+	"pressman": "aat:300025731",
+	"reporter": "aat:300025508",
+	"speaker": "aat:300136462",
+	"honoree": "aat:300404867",
+	"conservator": "aat:300102842",
+	"reviewer": "aat:300440750",
+	"court reporter": "aat:300136440",
+	"pseud": "aat:300404657",
+	"surveyor": "aat:300025100",
+	"teacher": "aat:300025529",
+
 	"respondent": "",
-	"respondant": "",
 	"defendant": "",
-	"defendent": "",
 	"appellee": "",
 	"associated name": "",
 	"addressee": "",
-	"judge": "",
 	"witness": "",
 	"appellant": "",
 	"recipient": "",
-	"plaintiff": "",
-	"honouree": "",
 	"complainant": "",
 	"petitioner": "",
 	"claimant": "",
 	"sender": "",
 	"user": "",
-	"dedicatee": "",
 	"commentator": "",
-	"curator": "",
 	"assignee": "",
 	"annotator": "",
-	"magistrate": "",
-	"proprietor": "",
-	"advertiser": "",
-	"signer": "",
-	"pressman": "",
 	"auxilium": "",
-	"reporter": "",
 	"other": "",
-	"presenter": "",
-	"speaker": "",
-	"honoree": "",
-	"conservator": "",
-	"reviewer": "",
 	"subject of parody": "",
-	"court reporter": "",
-	"pseud": "",
+	"presenter": "",
 	"digitiser": "",
 	"panelist": "",
-	"moderator": ""
+	"moderator": "",
+
+	"editor and translator": "",
 }
 
 place_roles_production = {
@@ -557,6 +629,14 @@ def construct_text(rec, clss):
 
 	return what
 
+occupation_type = model.Type(ident="http://vocab.getty.edu/aat/300263369", label="Occupation")
+function_type = model.Type(ident="http://vocab.getty.edu/aat/300138088", label="Function")
+form_type = model.Type(ident="http://vocab.getty.edu/aat/300226816", label="Form")
+organization_type = model.Type(ident="http://vocab.getty.edu/aat/300025948", label="Organization")
+family_type = model.Type(ident="http://vocab.getty.edu/aat/300055474", label="Family")
+culture_type = model.Type(ident="http://vocab.getty.edu/aat/300387171", label="Culture")
+meeting_type = model.Type(ident="http://vocab.getty.edu/aat/300054788", label="Meeting")
+
 def construct_facet(facet):
 
 	# Should title and publication be LinguisticObjects ?
@@ -572,18 +652,26 @@ def construct_facet(facet):
 		what = model.Person()
 	elif ftyp in ['topic'] or ftypl in ['topic', 'occupation', 'function', 'form']:
 		what = model.Type()
-
-		# XXX classify what sort of Type
-
+		if ftypl == "occuptation":
+			what.classified_as = occuptation_type
+		elif ftypl == "function":
+			what.classified_as = function_type
+		elif ftypl == "form":
+			what.classified_as = form_type
 	elif ftyp in ['period'] or ftypl in ['period', 'date']:
 		what = model.Period()
 	elif ftyp in ['genre'] or ftypl in ['genre']:
 		what = model.Type()
 	elif ftyp in ['organization', 'culture', 'family', 'meeting'] or ftypl in ['organization', 'culture']:
 		what = model.Group()
-
-		# XXX classify what sort of group
-
+		if ftyp == 'organization' or ftypl == 'organization':
+			what.classified_as = organization_type
+		elif ftyp == 'culture':
+			what.classified_as = culture_type
+		elif ftyp == 'family':
+			what.classified_as = family_type
+		elif ftyp == 'meeting':
+			what.classified_as = meeting_type
 	elif ftyp in ['title', 'publication']:
 		what = model.LinguisticObject()
 		# This might be a manuscript or a text ... play it safe with text
@@ -615,11 +703,8 @@ def construct_facet(facet):
 	rolel = facet.get('facet_role_label', '').lower()
 	rolec = facet.get('facet_role_code', '').lower()
 	roleu = facet.get('facet_role_URI', [])
-	if roleu:
-		roleu = roleu[0]
 
 	# XXX What to do with these?
-
 
 	return what
 
@@ -790,25 +875,20 @@ def transform_json(record, fn):
 		noteType = vocab.Note
 		ntype = None
 		if nt:
-			if nt == "300":
-				noteType = vocab.PhysicalStatement
-			elif nt == "245c":
-				noteType = vocab.AttributionStatement
-			elif nt == "500":
-				pass
-			elif nt == "533":
-				noteType = vocab.ReproductionStatement
-			elif nt == "504": 
-				noteType = vocab.BibliographyStatement
+			if nt in note_type_class:				
+				ntc = note_type_class[nt]
+				if ntc:
+					noteType = ntc 
 			else:
 				ntype = model.Type(label=nt)
+				print(f"-- Unknown note type: {nt}")
 		nl = n.get('note_label', None)
 		if nl and nl.lower() != nt.lower():
 			ndisp = vocab.DisplayName(content=nl)
 		else:
 			ndisp = None
 		for d in n.get('note_display', []):
-			note = construct_text(d, vocab.Note)
+			note = construct_text(d, noteType)
 			if note:
 				if ntype:
 					note.classified_as = ntype
@@ -1152,12 +1232,23 @@ def transform_json(record, fn):
 					part = model.Creation()
 				act.part = part
 				part.carried_out_by = agent
+				if not rolel:
+					rolel = "creator"
+				if agent_roles_production[rolel]:
+					roleu = agent_roles_production[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
+				else:
+					roleu = f"urn:uuid:{type_map[rolel]}"
+
 				part.classified_as = model.Type(ident=roleu, label=roleLabel)
 
 			# Publication
 			elif rolel in agent_roles_publication:
 				act = vocab.Publishing()
 				act.carried_out_by = agent
+				if agent_roles_publication[rolel]:
+					roleu = agent_roles_publication[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
+				else:
+					roleu = f"urn:uuid:{type_map[rolel]}"				
 				act.classified_as = model.Type(ident=roleu, label=roleLabel)
 				main.used_for = act
 
@@ -1180,6 +1271,10 @@ def transform_json(record, fn):
 						act = model.Creation()
 						main.created_by = act					
 					act.carried_out_by = agent
+					if agent_roles_encounter[rolel]:
+						roleu = agent_roles_encounter[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
+					else:
+						roleu = f"urn:uuid:{type_map[rolel]}"
 					act.classified_as = model.Type(ident=roleu, label=roleLabel)
 				else:
 					print(f"Can't set a collector on type {main.__class__} / {fn}")
@@ -1201,6 +1296,10 @@ def transform_json(record, fn):
 						main.created_by = act				
 
 				part = model.Activity()
+				if agent_roles_sponsor[rolel]:
+					roleu = agent_roles_sponsor[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
+				else:
+					roleu = f"urn:uuid:{type_map[rolel]}"
 				part.classified_as = model.Type(ident=roleu, label=roleLabel)
 				part.carried_out_by = agent
 				act.influenced_by = part
@@ -1209,6 +1308,10 @@ def transform_json(record, fn):
 			elif rolel in agent_roles_performance:
 				act = vocab.Performance()
 				main.used_for = act
+				if agent_roles_performance[rolel]:
+					roleu = agent_roles_performance[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
+				else:
+					roleu = f"urn:uuid:{type_map[rolel]}"
 				act.classified_as = model.Type(ident=roleu, label=roleLabel)
 				act.carried_out_by = agent
 
@@ -1581,7 +1684,7 @@ units.sort()
 last_report = 0
 report_every = 9999
 start = time.time()
-for unit in units[1:2]:
+for unit in units[0:1]:
 	unitfn = os.path.join(source, unit)
 	filedirs = os.listdir(unitfn)
 	filedirs.sort()

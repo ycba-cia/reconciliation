@@ -86,7 +86,7 @@ class LMDB(object):
 			raise ValueError("Key must be str or bytes")
 		if len(key) > 512:
 			if self.auto_truncate_keys:
-				key = key[:511] + "+"
+				key = key[:510] + b"+"
 			else:
 				raise ValueError(f"Key length is > 512: {key}")
 		if type(value) == str:
@@ -100,7 +100,7 @@ class LMDB(object):
 			raise ValueError('Key must be str or bytes')
 		if len(key) > 512:
 			if self.auto_truncate_keys:
-				key = key[:511] + "+"
+				key = key[:510] + b"+"
 			else:
 				raise ValueError(f"Key length is > 512: {key}")
 		value = self.cxn.get(key)
