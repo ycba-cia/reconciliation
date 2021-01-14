@@ -680,6 +680,13 @@ bdnote_classes = {
 	'acquisition_source_display': vocab.AcquisitionStatement
 }
 
+occupation_type = model.Type(ident="http://vocab.getty.edu/aat/300263369", label="Occupation")
+function_type = model.Type(ident="http://vocab.getty.edu/aat/300138088", label="Function")
+form_type = model.Type(ident="http://vocab.getty.edu/aat/300226816", label="Form")
+organization_type = model.Type(ident="http://vocab.getty.edu/aat/300025948", label="Organization")
+family_type = model.Type(ident="http://vocab.getty.edu/aat/300055474", label="Family")
+culture_type = model.Type(ident="http://vocab.getty.edu/aat/300387171", label="Culture")
+meeting_type = model.Type(ident="http://vocab.getty.edu/aat/300054788", label="Meeting")
 
 def construct_text(rec, clss):
 	# value, language, language_uri, character_set, character_set_uri, direction, direction_uri
@@ -697,14 +704,6 @@ def construct_text(rec, clss):
 		what.language = model.Language(ident=lang_uri, label=lang_label)
 
 	return what
-
-occupation_type = model.Type(ident="http://vocab.getty.edu/aat/300263369", label="Occupation")
-function_type = model.Type(ident="http://vocab.getty.edu/aat/300138088", label="Function")
-form_type = model.Type(ident="http://vocab.getty.edu/aat/300226816", label="Form")
-organization_type = model.Type(ident="http://vocab.getty.edu/aat/300025948", label="Organization")
-family_type = model.Type(ident="http://vocab.getty.edu/aat/300055474", label="Family")
-culture_type = model.Type(ident="http://vocab.getty.edu/aat/300387171", label="Culture")
-meeting_type = model.Type(ident="http://vocab.getty.edu/aat/300054788", label="Meeting")
 
 def construct_facet(facet):
 
