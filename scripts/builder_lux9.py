@@ -25,11 +25,19 @@ vocab.register_vocab_class('PreferCiteNote', {'parent': model.LinguisticObject, 
 # Note that 311705 is also Citation ... so can't distinguish a note about citations of this thing (but is that bibliography?) vs how to cite this thing
 vocab.register_vocab_class('ArrangementNote', {'parent': model.LinguisticObject, 'id':'300XXXXX2', 'label': "Contents Organization/Arrangement Note", 'metatype': 'brief text'})
 vocab.register_vocab_class('DigitalFileNote', {'parent': model.LinguisticObject, 'id':'300266011', 'label': "Digital Characteristics Note", 'metatype': 'brief text'})
-vocab.register_aat_class("SeparatedMaterialStatement", {"parent": model.LinguisticObject, "id": "300053748", "label": "Separated Material", "brief": True, })
-vocab.register_aat_class("ProcessingInfoStatement", {"parent": model.LinguisticObject, "id": "300077565", "label": "Processing Information", "brief": True, })
-vocab.register_aat_class("PhysTechStatement", {"parent": model.LinguisticObject, "id": "300221194", "label": "Physical Properties and Technical Requirements", "brief": True, })
-vocab.register_aat_class("AccrualsStatement", {"parent": model.LinguisticObject, "id": "300055458", "label": "Accruals", "brief": True, })
-vocab.register_aat_class("PhysicalLocationStatement", {"parent": model.LinguisticObject, "id": "300248479", "label": "Location", "brief": True, })
+vocab.register_aat_class("SeparatedMaterialStatement", {"parent": model.LinguisticObject, "id": "300053748", "label": "Separated Material", 'metatype': 'brief text'})
+vocab.register_aat_class("ProcessingInfoStatement", {"parent": model.LinguisticObject, "id": "300077565", "label": "Processing Information", 'metatype': 'brief text'})
+vocab.register_aat_class("PhysTechStatement", {"parent": model.LinguisticObject, "id": "300221194", "label": "Physical Properties and Technical Requirements", 'metatype': 'brief text'})
+vocab.register_aat_class("AccrualsStatement", {"parent": model.LinguisticObject, "id": "300055458", "label": "Accruals", 'metatype': 'brief text'})
+vocab.register_aat_class("PhysicalLocationStatement", {"parent": model.LinguisticObject, "id": "300248479", "label": "Location", 'metatype': 'brief text'})
+
+
+vocab.register_aat_class("AlternativeTitle", {"parent": model.Name, 'id':'300417226', 'label': "Alternative Title"})
+vocab.register_aat_class("PublishedTitle", {"parent": model.Name, 'id':'300417206', 'label': "Published Title"})
+vocab.register_aat_class("CollectiveTitle", {"parent": model.Name, 'id':'300417198', 'label': "Collective Title"})
+vocab.register_aat_class("InscribedTitle", {"parent": model.Name, 'id':'300417202', 'label': "Inscribed Title"})
+vocab.register_aat_class("GivenTitle", {"parent": model.Name, 'id':'300417201', 'label': "Given Title (by maker)"})
+vocab.register_aat_class("SeriesTitle", {"parent": model.Name, 'id':'300417214', 'label': "Given Title (by maker)"})
 
 
 DEBUG = False
@@ -607,10 +615,38 @@ date_roles_other = {
 	"other": ""
 }
 
-
 agent_roles_missed = {}
 place_roles_missed = {}
 date_roles_missed = {}
+
+# identifiers
+
+
+identifier_classes = {
+	'isbn': vocab.IsbnIdentifier,
+	'issn': vocab.IssnIdentifier,
+	'accession number': vocab.AccessionNumber,
+	'system': vocab.SystemNumber,
+	'TMS object identifier': vocab.SystemNumber,
+	'YCBA blacklight identifier': vocab.LocalNumber,
+	'catalog number': vocab.AccessionNumber,
+	'identification number': vocab.SystemNumber,
+	'ead': vocab.LocalNumber,
+	'call number': vocab.CallNumber,
+	'series unitid': vocab.LocalNumber,
+	'voyager bib id': vocab.SystemNumber,
+	'unitid': vocab.LocalNumber,
+	'recordgrp unitid': vocab.LocalNumber,
+}
+
+
+# These might be better as Identifiers that are assigned, rather than types?
+identifier_types = {
+	"lccn": model.Type(ident=type_map['lccn'], label="Library of Congress Control Number"),
+	"lc class number": model.Type(ident=type_map['lc class number'], label="Library of Congress Classification Number"),
+	"oclc": model.Type(ident=type_map['oclc number'], label="OCLC Number"),
+	'publisher distributor number': model.Type(ident=type_map['publisher distributor number'], label="Publisher/Distributor Number") # 028$b gives the publisher name
+}
 
 def construct_text(rec, clss):
 	# value, language, language_uri, character_set, character_set_uri, direction, direction_uri
@@ -777,7 +813,7 @@ def transform_json(record, fn):
 		ttype = model.Name
 		title_target = main
 		if ttype_label:
-			if ttype_label == "primary":
+			if ttype_label in ["primary", 'primary title']:
 				ttype = vocab.PrimaryName
 			elif ttype_label == "sort":
 				ttype = vocab.SortName
@@ -790,12 +826,34 @@ def transform_json(record, fn):
 				else:
 					main.part = part
 				title_target = part
-			elif ttype_label == "work related":
+			elif ttype_label in ["work related", 'related']:
 				rel = model.LinguisticObject()
 				# XXX -- what relationship to the main is this? main.related = rel
 				title_target = rel
+			elif ttype_label == "inherited":
+				# XXX  computed?
+				pass
+			elif ttype_label in ["alternative", 'alternate', 'alternative title']:
+				ttype = vocab.AlternativeTitle
+			elif ttype_label in ['series transcribed']:
+				# add a 'transcribed' type
+				tt = model.Type(label="Transcribed")
+			elif ttype_label == "translated title":
+				ttype = vocab.TranslatedTitle
+			elif ttype_label == "given title":
+				ttype = vocab.GivenTitle
+			elif ttype_label == "inscribed title":
+				ttype = vocab.InscribedTitle
+			elif ttype_label == "published title":
+				ttype = vocab.PublishedTitle
+			elif ttype_label == "project/collective title":
+				ttype = vocab.CollectiveTitle
+			elif ttype_label in ['series', 'portfolio/series title']:
+				ttype = vocab.SeriesTitle
 			else:
-				tt = model.Type(ident=ttype_uri, label=ttype_label)
+				if not ttype_label in ['work', 'foreign title']:
+					print(f"-- saw title type: {ttype_label}")
+				tt = model.Type(ident=type_map[f'title - {ttype_label}'], label=ttype_label)
 
 		for tval in tvalues:
 			# construct text
@@ -809,12 +867,17 @@ def transform_json(record, fn):
 	identifiers = record.get('identifiers', [])
 	for i in identifiers:
 		ival = i.get('identifier_value', '')
-		if ival:
-			ident = model.Identifier(content=ival)			
+		if ival:	
 			ityp = i.get('identifier_type', None)
-			if ityp:
-				ityp_uri = i.get('identifier_type_URI', [None])
-				ident.classified_as = model.Type(ident=ityp_uri[0], label=ityp)
+			if ityp and ityp in identifier_classes:
+				ident = identifier_classes[ityp](content=ival)
+			else:
+				ident = model.Identifier(content=ival)
+				if ityp in identifier_types:
+					ident.classified_as = identifier_types[ityp]
+				else:
+					print(f"-- Unmapped identifier type: {ityp}")
+					ident.classified_as = model.Type(label=ityp)
 			idisp = i.get('identifier_display', '')
 			if idisp and idisp != ival:
 				iname = vocab.DisplayName(content=idisp)
@@ -1040,14 +1103,38 @@ def transform_json(record, fn):
 		orig_type_label = r.get( "original_rights_type_label", "")
 		orig_type = r.get("original_rights_type", "")
 		orig_type_uri = r.get("original_rights_type_URI", "")
-
 		orig_uri = r.get('original_rights_URI', '')
 		orig_notes = r.get('original_rights_notes', '')
+
+		if orig_type == "usage" and orig_notes:
+			for o in orig_notes:
+				txt = construct_text(o, vocab.RightsStatement)
+				if txt:
+					main.referred_to_by = txt
+		elif orig_type in ["usage", '', None] and orig_uri:
+			for o in orig_uri:
+				main.referred_to_by = vocab.RightsStatement(ident=o, label="Rights Statement")
+		elif orig_type == 'access' and orig_notes:
+			for o in orig_notes:
+				txt = construct_text(o, vocab.AccessStatement)
+				if txt:
+					main.referred_to_by = txt
+
+
+		elif orig_uri or orig_notes:
+			print(f"{orig_type_label} / {orig_type} / {orig_type_uri} / {orig_uri} / {orig_notes}")
+		# if only a type but no content, then nothing to do
 
 	# digital_assets
 	digass = record.get('digital_assets', [])
 	for da in digass:
 		da_uris = da.get('asset_URI', [])
+		da_type = da.get('asset_type', None) # image, soundcloud
+		da_flag = da.get('asset_flag', None) # primary image,
+
+		if da_uris:
+			print(f"dig: {da_uris} / {da_type} / {da_flag}")
+
 
 		captions = da.get('asset_caption_display', [])
 		for c in captions:
@@ -1055,10 +1142,6 @@ def transform_json(record, fn):
 			if txt:
 				pass
 
-		da_type = da.get('asset_type', None)
-		da_type_URI = da.get('asset_type_URI', [])
-		da_flag = da.get('asset_flag', None)
-		da_flag_URI = da.get('asset_flag_URI', [])
 		#asset_rights_status_display
 		#asset_rights_notes
 		#asset_rights_type
@@ -1684,7 +1767,7 @@ units.sort()
 last_report = 0
 report_every = 9999
 start = time.time()
-for unit in units[0:1]:
+for unit in units[4:]:
 	unitfn = os.path.join(source, unit)
 	filedirs = os.listdir(unitfn)
 	filedirs.sort()
@@ -1715,4 +1798,5 @@ for unit in units[0:1]:
 			last_report = total
 			secs = time.time() - start
 			print(f"Processed {total} in {secs} at {total/secs}/sec") 
+			break
 
