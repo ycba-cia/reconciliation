@@ -11,7 +11,6 @@ from cromulent import model, vocab
 from cromulent.extract import date_cleaner
 from lmdb_utils import LMDB
 
-
 vocab.register_vocab_class("AccessStatement", {"parent": model.LinguisticObject, "id": "300133046", "label": "Access Statement", "metatype": "brief text"})
 vocab.register_vocab_class("CallNumber", {"parent": model.Identifier, "id": "300311706", "label": "Call Number"})
 vocab.register_vocab_class("Performance", {"parent": model.Activity, "id": "300069200", "label": "Performance"})
@@ -31,14 +30,16 @@ vocab.register_aat_class("PhysTechStatement", {"parent": model.LinguisticObject,
 vocab.register_aat_class("AccrualsStatement", {"parent": model.LinguisticObject, "id": "300055458", "label": "Accruals", 'metatype': 'brief text'})
 vocab.register_aat_class("PhysicalLocationStatement", {"parent": model.LinguisticObject, "id": "300248479", "label": "Location", 'metatype': 'brief text'})
 
-
 vocab.register_aat_class("AlternativeTitle", {"parent": model.Name, 'id':'300417226', 'label': "Alternative Title"})
 vocab.register_aat_class("PublishedTitle", {"parent": model.Name, 'id':'300417206', 'label': "Published Title"})
 vocab.register_aat_class("CollectiveTitle", {"parent": model.Name, 'id':'300417198', 'label': "Collective Title"})
 vocab.register_aat_class("InscribedTitle", {"parent": model.Name, 'id':'300417202', 'label': "Inscribed Title"})
 vocab.register_aat_class("GivenTitle", {"parent": model.Name, 'id':'300417201', 'label': "Given Title (by maker)"})
-vocab.register_aat_class("SeriesTitle", {"parent": model.Name, 'id':'300417214', 'label': "Given Title (by maker)"})
-
+vocab.register_aat_class("SeriesTitle", {"parent": model.Name, 'id':'300417214', 'label': "Series Title"})
+vocab.register_aat_class("TranscribedTitle", {"parent": model.Name, 'id':'300404333', 'label':"Transcribed Title"})
+vocab.register_aat_class("ConstructedTitle", {"parent": model.Name, 'id':'300417205', 'label':"Constructed/Computed Title"})
+vocab.register_aat_class("InheritedTitle", {"parent": model.Name, 'id':'300XXXXX3', 'label':"Inherited Title"})
+vocab.register_aat_class("DescriptiveTitle", {"parent": model.Name, 'id':'300417199', 'label':"Descriptive Title"})
 
 DEBUG = False
 NO_OVERWRITE = False
@@ -85,6 +86,8 @@ period_map = NameUuidDB('lux_period_db', open=True, map_size=int(2e9))
 event_map = NameUuidDB('lux_event_db', open=True, map_size=int(2e9))
 text_map = NameUuidDB('lux_text_db', open=True, map_size=int(2e9))
 set_map = NameUuidDB('lux_set_db', open=True, map_size=int(1e9))
+
+ead_uri_map = {}
 
 name_maps = {
 	model.Person: person_map,
@@ -648,6 +651,36 @@ identifier_types = {
 	'publisher distributor number': model.Type(ident=type_map['publisher distributor number'], label="Publisher/Distributor Number") # 028$b gives the publisher name
 }
 
+title_classes = {
+	"primary": vocab.PrimaryName,
+	"primary title": vocab.PrimaryName,
+	"sort": vocab.SortName,
+	"alternative": vocab.AlternativeTitle,
+	"alternate": vocab.AlternativeTitle,
+	"alternative title": vocab.AlternativeTitle,
+	"series transcribed": vocab.TranscribedTitle,
+	"transcribed": vocab.TranscribedTitle,
+	"translated title": vocab.TranslatedTitle,
+	"given title": vocab.GivenTitle,
+	"inscribed title": vocab.InscribedTitle,
+	"project/collective title": vocab.CollectiveTitle,
+	"series": vocab.SeriesTitle,
+	"portfolio/series title": vocab.SeriesTitle,
+	"inherited": vocab.InheritedTitle,
+	"published title": vocab.PublishedTitle,
+	"descriptive title": vocab.DescriptiveTitle
+}
+
+bdnote_classes = {
+	'edition_display': vocab.EditionStatement,
+	'imprint_display': vocab.ProductionStatement,
+	'materials_display':  vocab.MaterialStatement,
+	'inscription_display': vocab.InscriptionStatement,
+	'provenance_display': vocab.ProvenanceStatement,
+	'acquisition_source_display': vocab.AcquisitionStatement
+}
+
+
 def construct_text(rec, clss):
 	# value, language, language_uri, character_set, character_set_uri, direction, direction_uri
 
@@ -712,7 +745,8 @@ def construct_facet(facet):
 		what = model.LinguisticObject()
 		# This might be a manuscript or a text ... play it safe with text
 	else:
-		print(f"Unknown facet type: {ftyp} / {ftypl} ")
+		if ftyp or ftypl:
+			print(f"Unknown facet type: {ftyp} / {ftypl} ")
 		what = model.Type()
 
 	fdisp = facet.get('facet_display', [])
@@ -739,8 +773,7 @@ def construct_facet(facet):
 	rolel = facet.get('facet_role_label', '').lower()
 	rolec = facet.get('facet_role_code', '').lower()
 	roleu = facet.get('facet_role_URI', [])
-
-	# XXX What to do with these?
+	# XXX Not sure what to do with these roles? --> MDWG
 
 	return what
 
@@ -813,11 +846,7 @@ def transform_json(record, fn):
 		ttype = model.Name
 		title_target = main
 		if ttype_label:
-			if ttype_label in ["primary", 'primary title']:
-				ttype = vocab.PrimaryName
-			elif ttype_label == "sort":
-				ttype = vocab.SortName
-			elif ttype_label == "contents":
+			if ttype_label == "contents":
 				# title of a part of the work
 				# make a part, using main's class
 				part = main.__class__()
@@ -830,26 +859,8 @@ def transform_json(record, fn):
 				rel = model.LinguisticObject()
 				# XXX -- what relationship to the main is this? main.related = rel
 				title_target = rel
-			elif ttype_label == "inherited":
-				# XXX  computed?
-				pass
-			elif ttype_label in ["alternative", 'alternate', 'alternative title']:
-				ttype = vocab.AlternativeTitle
-			elif ttype_label in ['series transcribed']:
-				# add a 'transcribed' type
-				tt = model.Type(label="Transcribed")
-			elif ttype_label == "translated title":
-				ttype = vocab.TranslatedTitle
-			elif ttype_label == "given title":
-				ttype = vocab.GivenTitle
-			elif ttype_label == "inscribed title":
-				ttype = vocab.InscribedTitle
-			elif ttype_label == "published title":
-				ttype = vocab.PublishedTitle
-			elif ttype_label == "project/collective title":
-				ttype = vocab.CollectiveTitle
-			elif ttype_label in ['series', 'portfolio/series title']:
-				ttype = vocab.SeriesTitle
+			elif ttype_label in title_classes:
+				ttype = title_classes[ttype_label]
 			else:
 				if not ttype_label in ['work', 'foreign title']:
 					print(f"-- saw title type: {ttype_label}")
@@ -885,36 +896,12 @@ def transform_json(record, fn):
 			main.identified_by = ident
 
 	# basic_descriptor notes
-	if 'edition_display' in bd:
-		for ed in bd['edition_display']:
-			txt = construct_text(ed, vocab.EditionStatement)
-			if txt:
-				main.referred_to_by = txt
-	if 'imprint_display' in bd:
-		for imp in bd['imprint_display']:
-			txt = construct_text(imp, vocab.ProductionStatement)
-			if txt:
-				main.referred_to_by = txt
-	if 'materials_display' in bd:
-		for md in bd['materials_display']:
-			txt = construct_text(md, vocab.MaterialStatement)
-			if txt:
-				main.referred_to_by = txt
-	if 'inscription_display' in bd:
-		for ins in bd['inscription_display']:
-			txt = construct_text(ins, vocab.InscriptionStatement)
-			if txt:
-				main.referred_to_by = txt
-	if 'provenance_display' in bd:
-		for pd in bd['provenance_display']:
-			txt = construct_text(pd, vocab.ProvenanceStatement)
-			if txt:
-				main.referred_to_by = txt
-	if 'acquisition_source_display' in bd:
-		for asd in bd['acquisition_source_display']:
-			txt = construct_text(asd, vocab.AcquisitionStatement)
-			if txt:
-				main.referred_to_by = txt
+	for (prop, cl) in bdnote_classes.items():
+		if prop in bd:
+			for t in bd[prop]:
+				txt = construct_text(t, cl)
+				if txt:
+					main.referred_to_by = txt
 
 	# materials
 	mats = bd.get('materials_type', [])
@@ -978,6 +965,7 @@ def transform_json(record, fn):
 
 	done_colls = []
 	done_refs = []
+	ead_self_uri = None
 	for loc in locations:
 		ards = loc.get('access_in_repository_display', [])		
 		for ard in ards:
@@ -989,6 +977,8 @@ def transform_json(record, fn):
 			if r and not r in done_refs:
 				done_refs.append(r)
 				main.subject_of = vocab.WebPage(ident=r)
+				if r.startswith('https://archives.yale.edu/repositories/'):
+					ead_self_uri = r
 		colls = loc.get('collections', [])
 		for c in colls:
 			if c and not c in done_colls:
@@ -1116,10 +1106,12 @@ def transform_json(record, fn):
 				main.referred_to_by = vocab.RightsStatement(ident=o, label="Rights Statement")
 		elif orig_type == 'access' and orig_notes:
 			for o in orig_notes:
-				txt = construct_text(o, vocab.AccessStatement)
+				if type(o) == str:
+					txt = vocab.AccessStatement(content=o)
+				else:
+					txt = construct_text(o, vocab.AccessStatement)
 				if txt:
 					main.referred_to_by = txt
-
 
 		elif orig_uri or orig_notes:
 			print(f"{orig_type_label} / {orig_type} / {orig_type_uri} / {orig_uri} / {orig_notes}")
@@ -1133,35 +1125,91 @@ def transform_json(record, fn):
 		da_flag = da.get('asset_flag', None) # primary image,
 
 		if da_uris:
-			print(f"dig: {da_uris} / {da_type} / {da_flag}")
+			if not da_type:
+				for u in da_uris:
+					if u[-4:] in ['.jpg', '.png', '.tif', '.gif']:
+						da_type = "image"
+						break
+					elif u[-4:] in ['.pdf', '.doc']:
+						da_type = 'document'
+						break
+					elif u.endswith('.html') or u.endswith('.htm'):
+						da_type = "webpage"
+						break
+			elif da_type == "soundcloud":
+				da_type = "digital object link"
 
-
+			if da_type in ["image", "thumbnail"] or da_flag == "primary image":
+				# image of this entity; intent to show inline
+				dobj = vocab.DigitalImage()
+				for u in da_uris:
+					dobj.access_point = u
+				imgvi = model.VisualItem()
+				imgvi.digitally_shown_by = dobj
+				main.representation = imgvi
+			elif da_type == "digital object link": 
+				# webpage with digital representation of this entity; intent to create a link
+				# not necessarily visual (e.g. soundcloud), just another interaction
+				for u in da_uris:
+					dobj = vocab.WebPage(ident=u, label="Digital Representation")
+					main.subject_of = dobj
+			else:
+				if da_type or da_flag:
+					print(f"dig: {da_uris} / {da_type} / {da_flag}")
+				for u in da_uris:
+					dobj = model.DigitalObject(ident=u)
+					# XXX ref to by isn't quite right, but is the weakest sauce we have
+					main.referred_to_by = dobj
+			
 		captions = da.get('asset_caption_display', [])
 		for c in captions:
 			txt = construct_text(c, vocab.Description)
 			if txt:
-				pass
+				dobj.referred_to_by = txt
 
-		#asset_rights_status_display
-		#asset_rights_notes
-		#asset_rights_type
-		#asset_rights_type_URI
-		#asset_rights_type_label
+		arsd = da.get('asset_rights_status_display', [])
+		arn = da.get('asset_rights_notes', [])
+		art = da.get('asset_rights_type', [])
+		artl = da.get('asset_rights_type_label', [])
+		# Process these somehow?
 
 	# hierarchies
 	hiers = record.get('hierarchies', [])
 	for h in hiers:
 
-		htype = h.get('hierarchy_type', "") # "EAD; Series"
-		htype_uri = h.get('hierarchy_type_URI', "") 
-		root_id = h.get('root_internal_identifier', '') # https://.../resources/417
-		ancestor_names = h.get('ancestor_display_names', []) # ["coll of foo"]
+		htype = h.get('hierarchy_type', "") # "EAD; Series" / EAD; File / common names / taxonomic names
+		ancestor_names = h.get('ancestor_display_names', []) # ["coll of foo"] / Animalia / Insects
 		ancestor_ids = h.get('ancestor_internal_identifiers', []) # [".../resources/417"]
-		ancestor_uris = h.get('ancestor_URIs', []) 
+		root_id = h.get('root_internal_identifier', '') # https://.../resources/417
 
-		descends = h.get('descendant_count', 0)
-		sibs = h.get('sibling_count', 0)
-		max_depth = h.get('maximum_depth', 0)
+		# ancestor_uris = h.get('ancestor_URIs', [])  # empty?
+		# descends = h.get('descendant_count', 0)
+		# sibs = h.get('sibling_count', 0)
+		# max_depth = h.get('maximum_depth', 0)
+
+		# htype_uri = h.get('hierarchy_type_URI', "") 
+
+		# root:   ancester_* are empty, hierarchy_type is 'EAD; Collection' ; root_id is self (access_in_repo_id)
+		# l1: ancester_id is [root], type is EAD; Series
+		# l2: type: EAD; File
+		# root_id is always the first in ancestor_int_ids. 
+
+		if htype.startswith('EAD'):
+			# ASpace EAD partitioning structure
+			if ancestor_ids:
+				# link this as a member_of its parent
+				parent = ancestor_ids[-1]
+				parentid = ead_uri_map[parent]
+				main.member_of = model.Set(ident=parentid, label=ancestor_names[-1])
+				ead_uri_map[ead_self_uri] = main.id
+			else:
+				ead_uri_map[root_id] = main.id
+		elif htype in ['taxonomic names', 'common names']:
+			# YPM taxonomic hierarchy
+			pass
+		else:
+			print(f"Unknown hierarchy type: {htype} in {fn}")
+
 
 
 	#### Categories of Activity
@@ -1767,7 +1815,7 @@ units.sort()
 last_report = 0
 report_every = 9999
 start = time.time()
-for unit in units[4:]:
+for unit in units[:]:
 	unitfn = os.path.join(source, unit)
 	filedirs = os.listdir(unitfn)
 	filedirs.sort()
