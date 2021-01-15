@@ -555,6 +555,7 @@ place_roles_production = {
 place_roles_publication = {
 	"publication place": "",
 	"publication": "",
+	'publisher': '',
 	"published": "",
 	"retailed": "",
 	"printed": ""
@@ -1845,5 +1846,5 @@ for unit in units[:]:
 			last_report = total
 			secs = time.time() - start
 			print(f"Processed {total} in {secs} at {total/secs}/sec") 
-			break
+			# break
 
