@@ -5,11 +5,23 @@ import sys
 import pathlib
 import json
 import time
-from lxml import etree
 from io import BytesIO
+
 from cromulent import model, vocab
 from cromulent.extract import date_cleaner
 from lmdb_utils import LMDB
+
+DEBUG = False
+NO_OVERWRITE = False
+
+source = "../../lux"  # S3 buckets for v9
+# lux/ils/*
+# lux/aspace/<dir>/*
+# lux/ycba
+# lux/ypm
+# lux/yuag
+dest = "../output_lux"
+
 
 vocab.register_vocab_class("AccessStatement", {"parent": model.LinguisticObject, "id": "300133046", "label": "Access Statement", "metatype": "brief text"})
 vocab.register_vocab_class("CallNumber", {"parent": model.Identifier, "id": "300311706", "label": "Call Number"})
@@ -51,9 +63,6 @@ vocab.register_aat_class("CultureGroup", {"parent": model.Group, 'id':'300387171
 vocab.register_aat_class("MeetingGroup", {"parent": model.Group, 'id':'300054788', 'label':"Meeting"})
 
 
-DEBUG = False
-NO_OVERWRITE = False
-
 model.factory.auto_assign_id = False
 if not DEBUG:
 	model.factory.validate_properties = False
@@ -62,9 +71,6 @@ if not DEBUG:
 	model.factory.validate_multiplicity = False
 	model.factory.json_serializer = "fast"
 	model.factory.order_json = False
-
-source = "../../lux"
-dest = "../output_lux"
 
 # LMDBs that map name --> uuid
 class NameUuidDB(LMDB):
@@ -86,8 +92,6 @@ class NameUuidDB(LMDB):
 			counts[val] = 1
 		return val
 
-counts = {}
-
 person_map = NameUuidDB('lux_person_db', open=True, map_size=int(4e9))
 group_map = NameUuidDB('lux_group_db', open=True, map_size=int(2e9))
 type_map = NameUuidDB('lux_type_db', open=True, map_size=int(2e9))   # including material, language, type, currency, unit
@@ -98,6 +102,7 @@ text_map = NameUuidDB('lux_text_db', open=True, map_size=int(2e9))
 set_map = NameUuidDB('lux_set_db', open=True, map_size=int(1e9))
 uri_map = NameUuidDB('lux_uri_db', open=True, map_size=int(2e9))
 
+counts = {}
 ead_uri_map = {}
 
 name_maps = {
@@ -709,7 +714,6 @@ facet_classes = {
 }
 
 
-
 def construct_text(rec, clss):
 	# value, language, language_uri, character_set, character_set_uri, direction, direction_uri
 	if not 'value' in rec:
@@ -1255,7 +1259,10 @@ def transform_json(record, fn):
 
 		if not agent.id and hasattr(agent, 'identified_by'):
 			name = agent.identified_by[0].content
+			# XXX Enhancements here :)
 			agent.id = f"urn:uuid:{name_maps[agent_class][name]}"
+
+
 		for au in auri:
 			agent.equivalent = agent_class(ident=au)
 
@@ -1509,6 +1516,8 @@ def transform_json(record, fn):
 
 		if not place.id and hasattr(place, 'identified_by'):
 			name = place.identified_by[0].content
+			# XXX Enhancements on place reconciliation here
+
 			place.id = f"urn:uuid:{place_map[name]}"
 
 		# Only in YPM?
@@ -1814,7 +1823,7 @@ total = 0
 units = os.listdir(source)
 units.sort()
 last_report = 0
-report_every = 9999
+report_every = 29999
 start = time.time()
 for unit in units[:]:
 	unitfn = os.path.join(source, unit)
