@@ -41,6 +41,16 @@ vocab.register_aat_class("ConstructedTitle", {"parent": model.Name, 'id':'300417
 vocab.register_aat_class("InheritedTitle", {"parent": model.Name, 'id':'300XXXXX3', 'label':"Inherited Title"})
 vocab.register_aat_class("DescriptiveTitle", {"parent": model.Name, 'id':'300417199', 'label':"Descriptive Title"})
 
+vocab.register_aat_class("OccupationType", {"parent": model.Type, 'id':'300263369', 'label':"Occupation"})
+vocab.register_aat_class("FunctionType", {"parent": model.Type, 'id':'300138088', 'label':"Function"})
+vocab.register_aat_class("FormType", {"parent": model.Type, 'id':'300226816', 'label':"Form"})
+vocab.register_aat_class("GenreType", {"parent": model.Type, 'id':'', 'label':""})
+vocab.register_aat_class("OrganizationGroup", {"parent": model.Group, 'id':'300025948', 'label':"Organization"})
+vocab.register_aat_class("FamilyGroup", {"parent": model.Group, 'id':'300055474', 'label':"Family"})
+vocab.register_aat_class("CultureGroup", {"parent": model.Group, 'id':'300387171', 'label':"Culture"})
+vocab.register_aat_class("MeetingGroup", {"parent": model.Group, 'id':'300054788', 'label':"Meeting"})
+
+
 DEBUG = False
 NO_OVERWRITE = False
 
@@ -86,6 +96,7 @@ period_map = NameUuidDB('lux_period_db', open=True, map_size=int(2e9))
 event_map = NameUuidDB('lux_event_db', open=True, map_size=int(2e9))
 text_map = NameUuidDB('lux_text_db', open=True, map_size=int(2e9))
 set_map = NameUuidDB('lux_set_db', open=True, map_size=int(1e9))
+uri_map = NameUuidDB('lux_uri_db', open=True, map_size=int(2e9))
 
 ead_uri_map = {}
 
@@ -624,8 +635,6 @@ place_roles_missed = {}
 date_roles_missed = {}
 
 # identifiers
-
-
 identifier_classes = {
 	'isbn': vocab.IsbnIdentifier,
 	'issn': vocab.IssnIdentifier,
@@ -646,10 +655,10 @@ identifier_classes = {
 
 # These might be better as Identifiers that are assigned, rather than types?
 identifier_types = {
-	"lccn": model.Type(ident=type_map['lccn'], label="Library of Congress Control Number"),
-	"lc class number": model.Type(ident=type_map['lc class number'], label="Library of Congress Classification Number"),
-	"oclc": model.Type(ident=type_map['oclc number'], label="OCLC Number"),
-	'publisher distributor number': model.Type(ident=type_map['publisher distributor number'], label="Publisher/Distributor Number") # 028$b gives the publisher name
+	"lccn": model.Type(ident=f"urn:uuid:{type_map['lccn']}", label="Library of Congress Control Number"),
+	"lc class number": model.Type(ident=f"urn:uuid:{type_map['lc class number']}", label="Library of Congress Classification Number"),
+	"oclc": model.Type(ident=f"urn:uuid:{type_map['oclc number']}", label="OCLC Number"),
+	'publisher distributor number': model.Type(ident=f"urn:uuid:{type_map['publisher distributor number']}", label="Publisher/Distributor Number") # 028$b gives the publisher name
 }
 
 title_classes = {
@@ -681,17 +690,28 @@ bdnote_classes = {
 	'acquisition_source_display': vocab.AcquisitionStatement
 }
 
-occupation_type = model.Type(ident="http://vocab.getty.edu/aat/300263369", label="Occupation")
-function_type = model.Type(ident="http://vocab.getty.edu/aat/300138088", label="Function")
-form_type = model.Type(ident="http://vocab.getty.edu/aat/300226816", label="Form")
-organization_type = model.Type(ident="http://vocab.getty.edu/aat/300025948", label="Organization")
-family_type = model.Type(ident="http://vocab.getty.edu/aat/300055474", label="Family")
-culture_type = model.Type(ident="http://vocab.getty.edu/aat/300387171", label="Culture")
-meeting_type = model.Type(ident="http://vocab.getty.edu/aat/300054788", label="Meeting")
+facet_classes = {
+	'place': model.Place,
+	'person': model.Person,
+	'occupation': vocab.OccupationType,
+	'function': vocab.FunctionType,
+	'form': vocab.FormType,
+	'period': model.Period,
+	'date': model.Period,
+	'genre': model.Type,
+	'organization': vocab.OrganizationGroup,
+	'culture': vocab.CultureGroup,
+	'family': vocab.FamilyGroup,
+	'meeting': vocab.MeetingGroup,
+	'title': model.LinguisticObject,
+	'publication': model.LinguisticObject,
+	'topic': model.Type
+}
+
+
 
 def construct_text(rec, clss):
 	# value, language, language_uri, character_set, character_set_uri, direction, direction_uri
-
 	if not 'value' in rec:
 		return None
 	elif not rec['value']:
@@ -715,35 +735,10 @@ def construct_facet(facet):
 	if not ftyp and not ftypl:
 		# No facet type or facet type label, bail
 		return None
-	if ftyp in ['place'] or ftypl in ['place']:
-		what = model.Place()
-	elif ftyp in ['person'] or ftypl in ['person']:
-		what = model.Person()
-	elif ftyp in ['topic'] or ftypl in ['topic', 'occupation', 'function', 'form']:
-		what = model.Type()
-		if ftypl == "occuptation":
-			what.classified_as = occuptation_type
-		elif ftypl == "function":
-			what.classified_as = function_type
-		elif ftypl == "form":
-			what.classified_as = form_type
-	elif ftyp in ['period'] or ftypl in ['period', 'date']:
-		what = model.Period()
-	elif ftyp in ['genre'] or ftypl in ['genre']:
-		what = model.Type()
-	elif ftyp in ['organization', 'culture', 'family', 'meeting'] or ftypl in ['organization', 'culture']:
-		what = model.Group()
-		if ftyp == 'organization' or ftypl == 'organization':
-			what.classified_as = organization_type
-		elif ftyp == 'culture':
-			what.classified_as = culture_type
-		elif ftyp == 'family':
-			what.classified_as = family_type
-		elif ftyp == 'meeting':
-			what.classified_as = meeting_type
-	elif ftyp in ['title', 'publication']:
-		what = model.LinguisticObject()
-		# This might be a manuscript or a text ... play it safe with text
+	elif ftypl in facet_classes:
+		what = facet_classes[ftpl]()
+	elif ftyp in facet_classes:
+		what = facet_classes[ftyp]()
 	else:
 		if ftyp or ftypl:
 			print(f"Unknown facet type: {ftyp} / {ftypl} ")
@@ -1186,13 +1181,7 @@ def transform_json(record, fn):
 		# descends = h.get('descendant_count', 0)
 		# sibs = h.get('sibling_count', 0)
 		# max_depth = h.get('maximum_depth', 0)
-
 		# htype_uri = h.get('hierarchy_type_URI', "") 
-
-		# root:   ancester_* are empty, hierarchy_type is 'EAD; Collection' ; root_id is self (access_in_repo_id)
-		# l1: ancester_id is [root], type is EAD; Series
-		# l2: type: EAD; File
-		# root_id is always the first in ancestor_int_ids. 
 
 		if htype.startswith('EAD'):
 			# ASpace EAD partitioning structure
@@ -1209,8 +1198,6 @@ def transform_json(record, fn):
 			pass
 		else:
 			print(f"Unknown hierarchy type: {htype} in {fn}")
-
-
 
 	#### Categories of Activity
 
@@ -1229,6 +1216,8 @@ def transform_json(record, fn):
 	for a in agents:
 		dnames = a.get('agent_display', [])
 		sname = a.get('agent_sortname', '')
+		auri = a.get('agent_URI', [])
+
 		if not sname and not dnames:
 			continue
 
@@ -1247,7 +1236,12 @@ def transform_json(record, fn):
 				atyp = atyp.lower()
 
 		agent_class = agent_type_to_class[atyp]
-		agent = agent_class()
+		if auri and auri[0]:
+			ident = f"urn:uuid:{uri_map[auri[0]]}"
+			agent = agent_class(ident=ident)
+		else:
+			agent = agent_class()
+
 		dnvals = []
 		if dnames:
 			for ad in dnames:
@@ -1259,11 +1253,9 @@ def transform_json(record, fn):
 		if sname and not sname in dnvals:
 			agent.identified_by = vocab.SortName(content=sname)
 
-		if hasattr(agent, 'identified_by'):
+		if not agent.id and hasattr(agent, 'identified_by'):
 			name = agent.identified_by[0].content
 			agent.id = f"urn:uuid:{name_maps[agent_class][name]}"
-
-		auri = a.get('agent_URI', [])
 		for au in auri:
 			agent.equivalent = agent_class(ident=au)
 
@@ -1495,7 +1487,14 @@ def transform_json(record, fn):
 	# places
 	places = record.get('places', [])
 	for p in places:
-		place = model.Place()
+
+		puris = p.get('place_URI', [])
+		if puris and puris[0]:
+			ident = f"urn:uuid:{uri_map[puris[0]]}"
+			place = model.Place(ident=ident)
+		else:
+			place = model.Place()
+
 		pnames = p.get('place_display', [])
 		if not pnames or (pnames and len(pnames) == 1 and not pnames[0]['value']):
 			continue
@@ -1504,11 +1503,11 @@ def transform_json(record, fn):
 				txt = construct_text(pn, model.Name)
 				if txt:
 					place.identified_by = txt
-		puris = p.get('place_URI', [])
+
 		for pu in puris:
 			place.equivalent = model.Place(ident=pu)
 
-		if hasattr(place, 'identified_by'):
+		if not place.id and hasattr(place, 'identified_by'):
 			name = place.identified_by[0].content
 			place.id = f"urn:uuid:{place_map[name]}"
 
@@ -1741,6 +1740,11 @@ def transform_json(record, fn):
 		else:
 			# Construct an overall type and then associate the facets with it
 			subject = model.Type()
+
+			#
+			# XXX --- this should have an id ---
+			#
+
 			if suri:
 				subject.equivalent = model.Type(ident=suri)
 			for d in shd:
@@ -1749,14 +1753,11 @@ def transform_json(record, fn):
 					subject.identified_by = txt
 			#if shs:
 			#	subject.identified_by = vocab.SortName(content=shs)
-
 			if facets:
-				cre = model.Creation()
-				subject.created_by = cre
 				for facet in facets:
 					f = construct_facet(facet)
 					if f:
-						cre.influenced_by = f
+						subject.c_part = f
 		if subject:
 			target.about = subject
 
