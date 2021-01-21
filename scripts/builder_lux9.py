@@ -12,16 +12,11 @@ from cromulent.extract import date_cleaner
 from lmdb_utils import LMDB
 
 DEBUG = False
-NO_OVERWRITE = False
+NO_OVERWRITE = True
+NO_JSONL = True
 
-source = "../../lux"  # S3 buckets for v9
-# lux/ils/*
-# lux/aspace/<dir>/*
-# lux/ycba
-# lux/ypm
-# lux/yuag
+source = "../../lux"  # Here there should be the S3 buckets for v9 per unit
 dest = "../output_lux"
-
 
 vocab.register_vocab_class("AccessStatement", {"parent": model.LinguisticObject, "id": "300133046", "label": "Access Statement", "metatype": "brief text"})
 vocab.register_vocab_class("CallNumber", {"parent": model.Identifier, "id": "300311706", "label": "Call Number"})
@@ -62,7 +57,6 @@ vocab.register_aat_class("FamilyGroup", {"parent": model.Group, 'id':'300055474'
 vocab.register_aat_class("CultureGroup", {"parent": model.Group, 'id':'300387171', 'label':"Culture"})
 vocab.register_aat_class("MeetingGroup", {"parent": model.Group, 'id':'300054788', 'label':"Meeting"})
 
-
 model.factory.auto_assign_id = False
 if not DEBUG:
 	model.factory.validate_properties = False
@@ -71,6 +65,9 @@ if not DEBUG:
 	model.factory.validate_multiplicity = False
 	model.factory.json_serializer = "fast"
 	model.factory.order_json = False
+
+model.factory.context_uri = "https://linked-data.yalespace.org/context/linked-art.json"
+
 
 # LMDBs that map name --> uuid
 class NameUuidDB(LMDB):
@@ -740,7 +737,7 @@ def construct_facet(facet):
 		# No facet type or facet type label, bail
 		return None
 	elif ftypl in facet_classes:
-		what = facet_classes[ftpl]()
+		what = facet_classes[ftypl]()
 	elif ftyp in facet_classes:
 		what = facet_classes[ftyp]()
 	else:
@@ -1051,6 +1048,7 @@ def transform_json(record, fn):
 					d.value = float(av)
 				except:
 					# broken value, continue
+					print(f"Skipping dimension with broken value {av} in {fn}")
 					continue
 				d.unit = unit
 				if atu or at:
@@ -1629,6 +1627,9 @@ def transform_json(record, fn):
 
 		if not dnames and not botb and not eote:
 			continue
+
+		# XXX These should probably be validated as to date format
+
 		ts = model.TimeSpan()
 		if botb:
 			ts.begin_of_the_begin = botb
@@ -1775,28 +1776,49 @@ def transform_json(record, fn):
 
 def process_jsonl(fn):
 	ofn = fn.replace('../../lux/', '')
-	ofn = ofn.replace('.jsonl', '-jsonld.jsonl')
-	outfn = os.path.join(dest, ofn)
-	if NO_OVERWRITE and os.path.exists(outfn):
-		return 0
+
+	if not NO_JSONL:
+		# Make a new file fn/lineno.json
+		ofn = ofn.replace('.jsonl', '-jsonld.jsonl')
+		outfn = os.path.join(dest, ofn)
+		if NO_OVERWRITE and os.path.exists(outfn):
+			return 0
+	else:
+		# Test that we have a directory from the filename
+		ofn = ofn.replace('.jsonl', '')
+		outdir = os.path.join(dest, ofn)
+		if not os.path.exists(outdir):
+			os.mkdir(outdir)
 	x = 0
+	lx = 0
 	lines = []
 	with open(fn) as fh:
 		for l in fh.readlines():
+			lx += 1
+			if NO_JSONL and NO_OVERWRITE and os.path.exists(os.path.join(outdir, f"{lx}.json")):
+				continue
 			try:
 				js = json.loads(l)
-				x += 1
 			except:
 				print(f"Bad JSON in {fn} line {x}")
 				continue
+			x += 1
 			rec = transform_json(js, f"{fn}-{x}")
 			recstr = model.factory.toString(rec, compact=True)			
-			lines.append(recstr)
-	# Now serialize out
-	fh = open(outfn, 'w')
-	for l in lines:
-		fh.write(l + '\n')
-	fh.close()
+			if NO_JSONL:
+				# write line as a file within the directory
+				outfn = os.path.join(outdir, f"{lx}.json")
+				fh = open(outfn, 'w')
+				fh.write(recstr)
+				fh.close()				
+			else:
+				lines.append(recstr)
+	if not NO_JSONL:
+		# Now serialize out to JSONL
+		fh = open(outfn, 'w')
+		for l in lines:
+			fh.write(l + '\n')
+		fh.close()
 	return x
 
 def process_json(fn):
