@@ -11,12 +11,16 @@ from cromulent import model, vocab
 from cromulent.extract import date_cleaner
 from lmdb_utils import LMDB
 
+MINIMAL_SET = False
 DEBUG = False
 NO_OVERWRITE = True
 NO_JSONL = True
 
 source = "../../lux"  # Here there should be the S3 buckets for v9 per unit
 dest = "../output_lux"
+if MINIMAL_SET:
+	source = "../minimal_types.json"
+	dest = "../output_lux_minimal"
 
 vocab.register_vocab_class("AccessStatement", {"parent": model.LinguisticObject, "id": "300133046", "label": "Access Statement", "metatype": "brief text"})
 vocab.register_vocab_class("CallNumber", {"parent": model.Identifier, "id": "300311706", "label": "Call Number"})
@@ -67,7 +71,6 @@ if not DEBUG:
 	model.factory.order_json = False
 
 model.factory.context_uri = "https://linked-data.yalespace.org/context/linked-art.json"
-
 
 # LMDBs that map name --> uuid
 class NameUuidDB(LMDB):
@@ -715,16 +718,14 @@ def construct_text(rec, clss):
 	# value, language, language_uri, character_set, character_set_uri, direction, direction_uri
 	if not 'value' in rec:
 		return None
-	elif not rec['value']:
+	elif not rec['value'] or not rec['value'].strip() or rec['value'].strip() == ".":
 		return None
 	what = clss(content=rec['value'])
-
 	# Language
 	lang_label = rec.get('language', None)
 	lang_uri = rec.get('language_URI', None)
 	if lang_label:
 		what.language = model.Language(ident=lang_uri, label=lang_label)
-
 	return what
 
 def construct_facet(facet):
@@ -744,7 +745,6 @@ def construct_facet(facet):
 		if ftyp or ftypl:
 			print(f"Unknown facet type: {ftyp} / {ftypl} ")
 		what = model.Type()
-
 	fdisp = facet.get('facet_display', [])
 	for fd in fdisp:
 		txt = construct_text(fd, model.Name)
@@ -770,7 +770,9 @@ def construct_facet(facet):
 	rolec = facet.get('facet_role_code', '').lower()
 	roleu = facet.get('facet_role_URI', [])
 	# XXX Not sure what to do with these roles? --> MDWG
-
+	if rolel or rolec and rolel != "publication":
+		# print(f"facet role: {rolel} / {rolec}")
+		pass
 	return what
 
 
@@ -903,6 +905,7 @@ def transform_json(record, fn):
 	mats = bd.get('materials_type', [])
 	mat_uris = bd.get('materials_type_URI', [])
 	if mats and clss is not model.HumanMadeObject:
+		# XXX This should probably build a HMO instance that carries the text and has the materials
 		# print(f"Attempting to set materials on {clss} in {fn}")
 		pass
 	else:
@@ -959,54 +962,58 @@ def transform_json(record, fn):
 	# locations
 	locations = record.get('locations', [])
 
-	done_colls = []
-	done_refs = []
-	ead_self_uri = None
-	for loc in locations:
-		ards = loc.get('access_in_repository_display', [])		
-		for ard in ards:
-			txt = construct_text(ard, vocab.AccessStatement)
-			if txt:
-				main.referred_to_by = txt
-		refs = loc.get('access_in_repository_URI', [])
-		for r in refs:
-			if r and not r in done_refs:
-				done_refs.append(r)
-				main.subject_of = vocab.WebPage(ident=r)
-				if r.startswith('https://archives.yale.edu/repositories/'):
-					ead_self_uri = r
-		colls = loc.get('collections', [])
-		for c in colls:
-			if c and not c in done_colls:
-				done_colls.append(c)
-				ident = set_map[c]
-				coll = vocab.CollectionSet(ident=f"urn:uuid:{ident}")
-				coll.identified_by = model.Name(content=c)
-				main.member_of = coll
-		yhi = loc.get('yul_holding_institution', [])
-		for y in yhi:
-			if y:
-				ident = set_map[y]
-				coll = vocab.CollectionSet(ident=f"urn:uuid:{ident}")
-				coll.identified_by = model.Name(content=f"Holdings of {y}")
-				main.member_of = coll
-		cd = loc.get('campus_division', [])
-		if not yhi and cd:
-			for c in cd:
-				ident = set_map[c]
-				coll = vocab.CollectionSet(ident=f"urn:uuid:{ident}")
-				coll.identified_by = model.Name(content=f"Holdings of {c}")
-				main.member_of = coll
-		lcn = loc.get('location_call_number', "")
-		if lcn:
-			cn = vocab.CallNumber(content=lcn)
-			# Assign to the division as a group
-			aa = model.AttributeAssignment()
-			who = cd[0]
-			ident = group_map[who]
-			aa.carried_out_by = model.Group(ident=f"urn:uuid:{ident}", label=who)
-			cn.assigned_by = aa
-			main.identified_by = cn
+	if len(locations) > 49:
+		print(f"locations: {len(locations)} in {fn}")
+
+	if len(locations) < 50:
+		done_colls = []
+		done_refs = []
+		ead_self_uri = None
+		for loc in locations:
+			ards = loc.get('access_in_repository_display', [])		
+			for ard in ards:
+				txt = construct_text(ard, vocab.AccessStatement)
+				if txt:
+					main.referred_to_by = txt
+			refs = loc.get('access_in_repository_URI', [])
+			for r in refs:
+				if r and not r in done_refs:
+					done_refs.append(r)
+					main.subject_of = vocab.WebPage(ident=r)
+					if r.startswith('https://archives.yale.edu/repositories/'):
+						ead_self_uri = r
+			colls = loc.get('collections', [])
+			for c in colls:
+				if c and not c in done_colls:
+					done_colls.append(c)
+					ident = set_map[c]
+					coll = vocab.CollectionSet(ident=f"urn:uuid:{ident}")
+					coll.identified_by = model.Name(content=c)
+					main.member_of = coll
+			yhi = loc.get('yul_holding_institution', [])
+			for y in yhi:
+				if y:
+					ident = set_map[y]
+					coll = vocab.CollectionSet(ident=f"urn:uuid:{ident}")
+					coll.identified_by = model.Name(content=f"Holdings of {y}")
+					main.member_of = coll
+			cd = loc.get('campus_division', [])
+			if not yhi and cd:
+				for c in cd:
+					ident = set_map[c]
+					coll = vocab.CollectionSet(ident=f"urn:uuid:{ident}")
+					coll.identified_by = model.Name(content=f"Holdings of {c}")
+					main.member_of = coll
+			lcn = loc.get('location_call_number', "")
+			if lcn:
+				cn = vocab.CallNumber(content=lcn)
+				# Assign to the division as a group
+				aa = model.AttributeAssignment()
+				who = cd[0]
+				ident = group_map[who]
+				aa.carried_out_by = model.Group(ident=f"urn:uuid:{ident}", label=who)
+				cn.assigned_by = aa
+				main.identified_by = cn
 
 	# measurements
 	measurements = record.get('measurements', [])
@@ -1044,6 +1051,9 @@ def transform_json(record, fn):
 				except:
 					print(f"auu: {auu}")
 				d = model.Dimension()
+
+				# XXX Check if value is of the form hh:mm:ss and if so, make a duration
+
 				try:
 					d.value = float(av)
 				except:
@@ -1152,7 +1162,8 @@ def transform_json(record, fn):
 					main.subject_of = dobj
 			else:
 				if da_type or da_flag:
-					print(f"dig: {da_uris} / {da_type} / {da_flag}")
+					# print(f"dig: {da_uris} / {da_type} / {da_flag}")
+					pass
 				for u in da_uris:
 					dobj = model.DigitalObject(ident=u)
 					# XXX ref to by isn't quite right, but is the weakest sauce we have
@@ -1190,14 +1201,26 @@ def transform_json(record, fn):
 			if ancestor_ids:
 				# link this as a member_of its parent
 				parent = ancestor_ids[-1]
-				parentid = ead_uri_map[parent]
-				main.member_of = model.Set(ident=parentid, label=ancestor_names[-1])
-				ead_uri_map[ead_self_uri] = main.id
+				try:
+					parentid = ead_uri_map[parent]
+					main.member_of = model.Set(ident=parentid, label=ancestor_names[-1])
+					ead_uri_map[ead_self_uri] = main.id
+				except:
+					if not MINIMAL_SET:
+						print(f"Missing EAD hierarchy identifier alignment in {fn}")
 			else:
 				ead_uri_map[root_id] = main.id
 		elif htype in ['taxonomic names', 'common names']:
 			# YPM taxonomic hierarchy
-			pass
+			# classified_as Type() and then manage the taxonomy like we manage other vocabulary hierarchies
+			# We don't put the whole AAT or LCSH hierarchy into museum / bib records...
+			an = ancestor_names[-1]
+			taxon_name = '--'.join(ancestor_names)
+			if not an or an[0].islower():
+				an = ancestor_names[-2]
+				taxon_name = '--'.join(ancestor_names[:-1])
+			taxid = type_map[taxon_name]
+			main.classified_as = model.Type(ident=f"urn:uuid:{taxid}", label=an)
 		else:
 			print(f"Unknown hierarchy type: {htype} in {fn}")
 
@@ -1482,7 +1505,7 @@ def transform_json(record, fn):
 				pass
 
 			else:
-				print(f"Unknown agent role: {rolel} / {rolec} / {roleu} / {context}")
+				# print(f"Unknown agent role: {rolel} / {rolec} / {roleu} / {context}")
 				try:
 					agent_roles_missed[rolel] += 1
 				except:
@@ -1601,7 +1624,7 @@ def transform_json(record, fn):
 			pass
 
 		else:
-			print(f"Unknown Place role {rolel} / {rolec} / {roleu}")
+			# print(f"Unknown Place role {rolel} / {rolec} / {roleu}")
 			try:
 				place_roles_missed[rolel] += 1
 			except:
@@ -1718,7 +1741,7 @@ def transform_json(record, fn):
 			pass
 
 		else:
-			print(f"Unknown date role: {rolel} / {rolec} / {roleu}")
+			# print(f"Unknown date role: {rolel} / {rolec} / {roleu}")
 			try:
 				date_roles_missed[rolel] += 1
 			except:
@@ -1841,42 +1864,59 @@ def process_json(fn):
 		fh.close()		
 	return 1
 
-total = 0
-units = os.listdir(source)
-units.sort()
-last_report = 0
-report_every = 29999
-start = time.time()
-for unit in units[:]:
-	unitfn = os.path.join(source, unit)
-	filedirs = os.listdir(unitfn)
-	filedirs.sort()
-	for fd in filedirs[:]:
-		fn = os.path.join(unitfn, fd)
-		if os.path.isdir(fn):
-			# descend for aspace
-			sfiles = os.listdir(fn)
-			sfiles.sort()
-			for sf in sfiles:
-				sfn = os.path.join(fn, sf)
-				if sf.endswith('.json'):
-					total += process_json(sfn)
-				elif sf.endswith('.jsonl'):
-					total += process_jsonl(sfn)
-				else:
-					print(f"Found extraneous file: {sfn}")
-					continue
-		elif fd.endswith('.json'):
-			total += process_json(fn)
-		elif fd.endswith('.jsonl'):
-			total += process_jsonl(fn)
-		else:
-			# These shouldn't be here
-			print(f"Found extraneous file: {fd}")
-			continue
-		if last_report + report_every < total:
-			last_report = total
-			secs = time.time() - start
-			print(f"Processed {total} in {secs} at {total/secs}/sec") 
-			# break
+
+
+if MINIMAL_SET:
+	fh = open(source)
+	jsdata = json.load(fh)
+	fh.close()
+	x = 0
+	for js in jsdata:
+		x += 1
+		fn = f"minimal-{x}.json"
+		rec = transform_json(js, fn)
+		recstr = model.factory.toString(rec, compact=True)
+		fh = open(os.path.join(dest, fn), 'w')
+		fh.write(recstr)
+		fh.close()
+
+else:
+	total = 0
+	units = os.listdir(source)
+	units.sort()
+	last_report = 0
+	report_every = 29999
+	start = time.time()
+	for unit in units[2:]:
+		unitfn = os.path.join(source, unit)
+		filedirs = os.listdir(unitfn)
+		filedirs.sort()
+		for fd in filedirs[:]:
+			fn = os.path.join(unitfn, fd)
+			if os.path.isdir(fn):
+				# descend for aspace
+				sfiles = os.listdir(fn)
+				sfiles.sort()
+				for sf in sfiles:
+					sfn = os.path.join(fn, sf)
+					if sf.endswith('.json'):
+						total += process_json(sfn)
+					elif sf.endswith('.jsonl'):
+						total += process_jsonl(sfn)
+					else:
+						print(f"Found extraneous file: {sfn}")
+						continue
+			elif fd.endswith('.json'):
+				total += process_json(fn)
+			elif fd.endswith('.jsonl'):
+				total += process_jsonl(fn)
+			else:
+				# These shouldn't be here
+				print(f"Found extraneous file: {fd}")
+				continue
+			if last_report + report_every < total:
+				last_report = total
+				secs = time.time() - start
+				print(f"Processed {total} in {secs} at {total/secs}/sec") 
+				# break
 
