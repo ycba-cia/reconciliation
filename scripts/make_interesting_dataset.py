@@ -562,36 +562,37 @@ report_every = 50
 start = time.time()
 for unit in units[:]:
 	unitfn = os.path.join(source, unit)
-	filedirs = os.listdir(unitfn)
-	filedirs.sort()
-	for fd in filedirs[:]:
-		fn = os.path.join(unitfn, fd)
-		if os.path.isdir(fn):
-			# descend for aspace
-			sfiles = os.listdir(fn)
-			sfiles.sort()
-			for sf in sfiles:
-				sfn = os.path.join(fn, sf)
-				if sf.endswith('.json'):
-					total += process_json(sfn)
-				elif sf.endswith('.jsonl'):
-					total += process_jsonl(sfn)
-				else:
-					print(f"Found extraneous file: {sfn}")
-					continue
-		elif fd.endswith('.json'):
-			total += process_json(fn)
-		elif fd.endswith('.jsonl'):
-			total += process_jsonl(fn)
-		else:
-			# These shouldn't be here
-			print(f"Found extraneous file: {fd}")
-			continue
-		if last_report + report_every < total:
-			last_report = total
-			secs = time.time() - start
-			print(f"Found {total} interesting in {secs}") 
-			# break
+	if os.path.isdir(unitfn):
+		filedirs = os.listdir(unitfn)
+		filedirs.sort()
+		for fd in filedirs[:]:
+			fn = os.path.join(unitfn, fd)
+			if os.path.isdir(fn):
+				# descend for aspace
+				sfiles = os.listdir(fn)
+				sfiles.sort()
+				for sf in sfiles:
+					sfn = os.path.join(fn, sf)
+					if sf.endswith('.json'):
+						total += process_json(sfn)
+					elif sf.endswith('.jsonl'):
+						total += process_jsonl(sfn)
+					else:
+						print(f"Found extraneous file: {sfn}")
+						continue
+			elif fd.endswith('.json'):
+				total += process_json(fn)
+			elif fd.endswith('.jsonl'):
+				total += process_jsonl(fn)
+			else:
+				# These shouldn't be here
+				print(f"Found extraneous file: {fd}")
+				continue
+			if last_report + report_every < total:
+				last_report = total
+				secs = time.time() - start
+				print(f"Found {total} interesting in {secs}") 
+				# break
 
 jstr = json.dumps(outrecs)
 fh = open('minimal_types.json', 'w')

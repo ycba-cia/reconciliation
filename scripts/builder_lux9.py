@@ -1217,8 +1217,12 @@ def transform_json(record, fn):
 			an = ancestor_names[-1]
 			taxon_name = '--'.join(ancestor_names)
 			if not an or an[0].islower():
-				an = ancestor_names[-2]
-				taxon_name = '--'.join(ancestor_names[:-1])
+				if len(ancestor_names) == 1:
+					# only one name, and it's empty...
+					continue
+				else:
+					an = ancestor_names[-2]
+					taxon_name = '--'.join(ancestor_names[:-1])
 			taxid = type_map[taxon_name]
 			main.classified_as = model.Type(ident=f"urn:uuid:{taxid}", label=an)
 		else:
