@@ -10,9 +10,6 @@ from io import BytesIO
 source = "../../lux"  # Here there should be the S3 buckets for v9 per unit
 dest = "../input_lux_min"
 
-ead_uri_map = {}
-
-
 outrecs = []
 
 done_supertypes = {}

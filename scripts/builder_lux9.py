@@ -814,7 +814,7 @@ def transform_json(record, fn):
 	# Add lowest Supertype to instance
 	for stl in nst:
 		st = stl[-1]
-		sturi = st_uri.get(st, f"http://lux.yale.edu/supertype/{st}")
+		sturi = st_uri.get(st, f"http://lux.yale.edu/supertype/{st.replace(' ', '_')}")
 		t = model.Type(ident=sturi, label=st)
 		main.classified_as = t
 
