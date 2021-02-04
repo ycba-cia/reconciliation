@@ -11,8 +11,8 @@ from cromulent import model, vocab
 from cromulent.extract import date_cleaner
 from lmdb_utils import LMDB
 
-MINIMAL_SET = False
-DEBUG = False
+MINIMAL_SET = True
+DEBUG = True
 NO_OVERWRITE = True
 NO_JSONL = True
 
@@ -639,6 +639,11 @@ agent_roles_missed = {}
 place_roles_missed = {}
 date_roles_missed = {}
 
+agent_roles_cats = {"production": agent_roles_production, "publication": agent_roles_publication, 
+	"encounter": agent_roles_encounter, "sponsor": agent_roles_sponsor,  
+	"performance": agent_roles_performance, "provenance": agent_roles_provenance, 
+	"exhibition": agent_roles_exhibition, "other": agent_roles_other}
+
 # identifiers
 identifier_classes = {
 	'isbn': vocab.IsbnIdentifier,
@@ -962,9 +967,6 @@ def transform_json(record, fn):
 	# locations
 	locations = record.get('locations', [])
 
-	if len(locations) > 49:
-		print(f"locations: {len(locations)} in {fn}")
-
 	if len(locations) < 50:
 		done_colls = []
 		done_refs = []
@@ -1046,13 +1048,26 @@ def transform_json(record, fn):
 					# meaningless without both of these
 					continue
 
+
+				d = model.Dimension()
 				try:
 					unit = model.MeasurementUnit(ident=auu, label=au)
 				except:
 					print(f"auu: {auu}")
-				d = model.Dimension()
-
 				# XXX Check if value is of the form hh:mm:ss and if so, make a duration
+				if ':' in av:
+					bits = av.split(':')
+					if len(bits) == 3:
+						mults = [3600, 60, 1]
+						ttl = 0
+						for b in range(3):
+							bit = bits[b]
+							if bit.isdigit():
+								ttl += int(bit) * mults[b]
+						# set value to ttl, and unit to seconds
+						d.identified_by = vocab.DisplayName(content=av)
+						av = ttl
+						unit = vocab.instances['seconds']
 
 				try:
 					d.value = float(av)
@@ -1150,7 +1165,7 @@ def transform_json(record, fn):
 				# image of this entity; intent to show inline
 				dobj = vocab.DigitalImage()
 				for u in da_uris:
-					dobj.access_point = u
+					dobj.access_point = model.DigitalObject(ident=u)
 				imgvi = model.VisualItem()
 				imgvi.digitally_shown_by = dobj
 				main.representation = imgvi
@@ -1249,6 +1264,8 @@ def transform_json(record, fn):
 
 		if not sname and not dnames:
 			continue
+		elif len(dnames) == 1 and 'value' in dnames[0] and not dnames[0]['value']:
+			continue
 
 		atyp = a.get('agent_type_URI', [])
 		if atyp and type(atyp) == list and atyp[0]:
@@ -1256,7 +1273,7 @@ def transform_json(record, fn):
 		else:
 			atyp = a.get('agent_type_display', None)
 			if not atyp:
-				if 'ycba' in fn:
+				if 'ycba' in md_identifier:
 					atyp = "organization"
 				else:	
 					print(f"No type: {dnames}")					
@@ -1326,194 +1343,195 @@ def transform_json(record, fn):
 			else:
 				what = main
 
-			# XXX Process "A and B" "A & B"
-
-			# Creation
-			roleLabel = rolel
-			rolel = rolel.lower()
-			rolel = rolel.replace('jt. ', ' joint ')
-			rolel = rolel.replace('ed.', 'editor')
-			rolel = rolel.replace('tr.', 'translator')
-			rolel = rolel.replace(' & ', ' and ')
-			rolel = rolel.replace("(expression)", "")
-			rolel = rolel.replace("supposed ", "attributed ")
-			rolel = rolel.replace(', attributed to', "")
-			rolel = rolel.replace('joint ', '')
-			rolel = rolel.replace('attributed name', 'creator')
-			rolel = rolel.replace('attributed ', '')
-			rolel = rolel.replace(', possibly by', '')
-			rolel = rolel.replace(', probably by', '')
-			rolel = rolel.strip()
-			if len(rolel) > 2 and rolel[0] == "(" and rolel[-1] == ")":
-				rolel = rolel[1:-1].strip()
-
-			if rolel in agent_roles_translations:
-				rolel = agent_roles_translations[rolel]
-
-			if rolel.startswith('author of ') or rolel.startswith("writer of "):
-				# XXX This could be separated out as a part
-				rolel = "author"
-			elif rolel.startswith('editor of'):
-				rolel = "editor"
-			elif rolel.startswith('arranger of'):
-				rolel = "arranger"
-			elif rolel.startswith('artist, '):
-				rolel = "artist"
-			elif rolel.startswith('maker, '):
-				rolel = "maker"
-
-			while rolel.endswith('.'):
-				rolel = rolel[:-1]
-
-			if not roleu and rolec:
-				roleu = f"http://lux/roles/agent/{rolec}"
+			if ' and ' in rolel:
+				rolels = rolel.split(' and ')
+			elif ' & ' in rolel:
+				rolels = rolel.split(' & ')
+			elif ';' in rolel:
+				rolels = rolel.split(';')
 			else:
-				roleu = None
+				rolels = [rolel]
 
-			if rolel in agent_roles_production or (not rolel and context == "production"):
-				if isinstance(main, model.HumanMadeObject):
-					if hasattr(main, 'produced_by'):
-						act = main.produced_by
-					else:
-						act = model.Production()
-						main.produced_by = act
-					part = model.Production()
-				else:
-					if hasattr(main, 'created_by'):
-						act = main.created_by
-					else:
-						act = model.Creation()
-						main.created_by = act				
-					part = model.Creation()
-				act.part = part
-				part.carried_out_by = agent
+
+			rolel_cats = {"production": [], "publication": [], "encounter": [], "sponsor": [], 
+							"performance": [], "provenance": [], "exhibition": [], "other": []}
+
+			for rolel in rolels:
+				rolel = rolel.lower().strip()
+				rolel = rolel.replace('jt. ', ' joint ')
+				rolel = rolel.replace('ed.', 'editor')
+				rolel = rolel.replace('tr.', 'translator')
+				rolel = rolel.replace(' & ', ' and ')
+				rolel = rolel.replace("(expression)", "")
+				rolel = rolel.replace("supposed ", "attributed ")
+				rolel = rolel.replace(', attributed to', "")
+				rolel = rolel.replace('joint ', '')
+				rolel = rolel.replace('attributed name', 'creator')
+				rolel = rolel.replace('attributed ', '')
+				rolel = rolel.replace(', possibly by', '')
+				rolel = rolel.replace(', probably by', '')
+				rolel = rolel.strip()
+				if len(rolel) > 2 and rolel[0] == "(" and rolel[-1] == ")":
+					rolel = rolel[1:-1].strip()
+
+				if rolel in agent_roles_translations:
+					rolel = agent_roles_translations[rolel]
+
+				if rolel.startswith('author of ') or rolel.startswith("writer of "):
+					# XXX This could be separated out as a part
+					rolel = "author"
+				elif rolel.startswith('editor of'):
+					rolel = "editor"
+				elif rolel.startswith('arranger of'):
+					rolel = "arranger"
+				elif rolel.startswith('artist, '):
+					rolel = "artist"
+				elif rolel.startswith('maker, '):
+					rolel = "maker"
+
+				while rolel.endswith('.'):
+					rolel = rolel[:-1]
+
 				if not rolel:
-					rolel = "creator"
-				if agent_roles_production[rolel]:
-					roleu = agent_roles_production[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
-				else:
-					roleu = f"urn:uuid:{type_map[rolel]}"
+					if context == "production":
+						rolel = "creator"
+					elif context in ["provenance", "acquisition"]:
+						rolel = "owner" # ???
 
-				part.classified_as = model.Type(ident=roleu, label=roleLabel)
+				matched = False
+				for (k, v) in agent_roles_cats.items():
+					if rolel in v:
+						rolel_cats[k].append(rolel)
+						matched = True
+						break
+				if not matched:
+					try:
+						agent_roles_missed[rolel] += 1
+					except:
+						agent_roles_missed[rolel] = 1
 
-			# Publication
-			elif rolel in agent_roles_publication:
-				act = vocab.Publishing()
-				act.carried_out_by = agent
-				if agent_roles_publication[rolel]:
-					roleu = agent_roles_publication[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
-				else:
-					roleu = f"urn:uuid:{type_map[rolel]}"				
-				act.classified_as = model.Type(ident=roleu, label=roleLabel)
-				main.used_for = act
 
-			# Discovery
-			# XXX This should be a provenance activity in the future
-			elif rolel in agent_roles_encounter:
-				# collector of specimen, etc
-				if clss == model.HumanMadeObject:
-					if hasattr(main, 'encountered_by'):
-						enc = main.encountered_by[0]
-					else:		
-						enc = model.Encounter()
-						main.encountered_by = enc
-					enc.carried_out_by = agent
-					enc.classified_as = model.Type(ident=roleu, label=roleLabel)
-				elif clss == model.Set:
-					if hasattr(main, 'created_by'):
-						act = main.created_by
-					else:
-						act = model.Creation()
-						main.created_by = act					
-					act.carried_out_by = agent
-					if agent_roles_encounter[rolel]:
-						roleu = agent_roles_encounter[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
-					else:
-						roleu = f"urn:uuid:{type_map[rolel]}"
-					act.classified_as = model.Type(ident=roleu, label=roleLabel)
-				else:
-					print(f"Can't set a collector on type {main.__class__} / {fn}")
+			for (rtype, rlist) in rolel_cats.items():
+				if rlist:
+					if rtype == 'production':
+						if isinstance(main, model.HumanMadeObject):
+							if hasattr(main, 'produced_by'):
+								act = main.produced_by
+							else:
+								act = model.Production()
+								main.produced_by = act
+							part = model.Production()
+						else:
+							if hasattr(main, 'created_by'):
+								act = main.created_by
+							else:
+								act = model.Creation()
+								main.created_by = act				
+							part = model.Creation()
+						act.part = part
+						part.carried_out_by = agent
 
-			# Sponsor
-			elif rolel in agent_roles_sponsor:
-				# cause or influence on the production
-				if isinstance(main, model.HumanMadeObject):
-					if hasattr(main, 'produced_by'):
-						act = main.produced_by
-					else:
-						act = model.Production()
-						main.produced_by = act
-				else:
-					if hasattr(main, 'created_by'):
-						act = main.created_by
-					else:
-						act = model.Creation()
-						main.created_by = act				
+						for rolel in rlist:
+							if agent_roles_production[rolel]:
+								roleu = agent_roles_production[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
+							else:
+								roleu = f"urn:uuid:{type_map[rolel]}"
+							part.classified_as = model.Type(ident=roleu, label=rolel)
 
-				part = model.Activity()
-				if agent_roles_sponsor[rolel]:
-					roleu = agent_roles_sponsor[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
-				else:
-					roleu = f"urn:uuid:{type_map[rolel]}"
-				part.classified_as = model.Type(ident=roleu, label=roleLabel)
-				part.carried_out_by = agent
-				act.influenced_by = part
+					elif rtype == "publication":
+						act = vocab.Publishing()
+						act.carried_out_by = agent
+						main.used_for = act
+						for rolel in rlist:
+							if agent_roles_publication[rolel]:
+								roleu = agent_roles_publication[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
+							else:
+								roleu = f"urn:uuid:{type_map[rolel]}"				
+							act.classified_as = model.Type(ident=roleu, label=rolel)
+
+
+					elif rtype == "encounter":
+						# XXX This should be a provenance activity in the future
+						if clss == model.HumanMadeObject:
+							if hasattr(main, 'encountered_by'):
+								act = main.encountered_by[0]
+							else:		
+								act = model.Encounter()
+								main.encountered_by = act
+						elif clss == model.Set:
+							if hasattr(main, 'created_by'):
+								act = main.created_by
+							else:
+								act = model.Creation()
+								main.created_by = act					
+						else:
+							print(f"Can't set encounter role {rlist} on {clss}")
+							continue
+						act.carried_out_by = agent
+
+						for rolel in rlist:
+							if agent_roles_encounter[rolel]:
+								roleu = agent_roles_encounter[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
+							else:
+								roleu = f"urn:uuid:{type_map[rolel]}"
+							act.classified_as = model.Type(ident=roleu, label=rolel)
+
+					elif rtype == "sponsor":
+						if isinstance(main, model.HumanMadeObject):
+							if hasattr(main, 'produced_by'):
+								act = main.produced_by
+							else:
+								act = model.Production()
+								main.produced_by = act
+						else:
+							if hasattr(main, 'created_by'):
+								act = main.created_by
+							else:
+								act = model.Creation()
+								main.created_by = act				
+						part = model.Activity()
+						part.carried_out_by = agent
+						act.influenced_by = part
+
+						for rolel in rlist:
+							if agent_roles_sponsor[rolel]:
+								roleu = agent_roles_sponsor[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
+							else:
+								roleu = f"urn:uuid:{type_map[rolel]}"
+							part.classified_as = model.Type(ident=roleu, label=rolel)
 		
-			# Performance
-			elif rolel in agent_roles_performance:
-				act = vocab.Performance()
-				main.used_for = act
-				if agent_roles_performance[rolel]:
-					roleu = agent_roles_performance[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
-				else:
-					roleu = f"urn:uuid:{type_map[rolel]}"
-				act.classified_as = model.Type(ident=roleu, label=roleLabel)
-				act.carried_out_by = agent
+					elif rtype == "performance":
+						act = vocab.Performance()
+						main.used_for = act
+						act.carried_out_by = agent
+						for rolel in rlist:
+							if agent_roles_performance[rolel]:
+								roleu = agent_roles_performance[rolel].replace('aat:', 'http://vocab.getty.edu/aat/')
+							else:
+								roleu = f"urn:uuid:{type_map[rolel]}"
+							act.classified_as = model.Type(ident=roleu, label=rolel)
 
-			# Provenance
-			elif rolel in agent_roles_provenance or context in ["provenance", "acquisition"]:
+					elif rtype == "provenance":
+						if clss in [ model.Set, model.LinguisticObject ]:
+							# Can't actually transfer ownership of a Set or Text, as the thing is conceptual
+							# instead the ownership of all the physical members of the set was transferred,
+							# but we don't have identity for all those members separately, or a particular carrier
+							# of the text was transferred
+							continue
+						print(f"{fn} --> {rlist}")
 
-				# "copyright holder"
-				# "owner"
-				# "current owner"
-				# "former owner" 
-				# "previous owner
-				# "donor"
-
-				# "client"
-				# "patron"
-				# "source"
-
-				# "licensee"
-
-				# "purchaser"
-				# "exchanger"
-
-				# "auctioneer"
-				# "licensor"
-				# "vendor"
-
-				# "land owner"
+						for rolel in rlist:
+							if rolel in ["donor", "source"]:
+								# from agent to yale
+								pass
 
 
 
+					elif rtype == "exhibition":
+						pass
+					elif rtype == "other":
+						pass
 
-				pass
-
-			# Exhibitions
-			elif rolel in agent_roles_exhibition or context == "exhibition":
-				pass
-
-			# Other
-			elif rolel in agent_roles_other:
-				pass
-
-			else:
-				# print(f"Unknown agent role: {rolel} / {rolec} / {roleu} / {context}")
-				try:
-					agent_roles_missed[rolel] += 1
-				except:
-					agent_roles_missed[rolel] = 1
 
 
 	# places
@@ -1791,10 +1809,11 @@ def transform_json(record, fn):
 			#if shs:
 			#	subject.identified_by = vocab.SortName(content=shs)
 			if facets:
+				subject.created_by = model.Creation()				
 				for facet in facets:
 					f = construct_facet(facet)
 					if f:
-						subject.c_part = f
+						subject.created_by.influenced_by = f
 		if subject:
 			target.about = subject
 
@@ -1891,7 +1910,7 @@ else:
 	last_report = 0
 	report_every = 29999
 	start = time.time()
-	for unit in units[2:]:
+	for unit in units[1:2]:
 		unitfn = os.path.join(source, unit)
 		filedirs = os.listdir(unitfn)
 		filedirs.sort()

@@ -61,7 +61,7 @@ for f in files:
 				if s[0] == "<" and s[-1] == ">":
 					t['subject'] = s[1:-1]
 				elif s.startswith("_:"):
-					t['subject'] = f"_:{fx}_{s}"
+					t['subject'] = f"_:r{fx}_{s[2:]}"
 				else:
 					print(f"unknown subject format: {s}")
 				p = p.strip()
@@ -75,7 +75,7 @@ for f in files:
 				elif o[0] == "<" and o[-1] == ">":
 					t['object'] = o[1:-1]					
 				elif o.startswith('_:'):
-					t['object'] = f"_:{fx}_{o}"
+					t['object'] = f"_:r{fx}_{o[2:]}"
 				elif '^^' in o:
 					value, datatype = o.split('^^')
 					# chomp ""s and <>s
