@@ -2,8 +2,8 @@
 - **record_id:** No longer needed. This was earlier used as a construct for the URL.
 - **title** No longer needed as data is pulled in from the data store.
 - **data:** No longer needed as data is pulled in from the data store.
-- **record_metadata_arrived_in_LUX_dtsi:** Unknown.
-- **record_metadata_rights_label:** Unknown.
+- **record_metadata_arrived_in_LUX_dtsi:** This should be a timestamp created programatically at time of ingest.
+- **record_metadata_rights_label:** Unneccsary.
 - **record_metadata_identifier:** No longer used. Now append to the end value of the ID.
 - **identifiers_identifier_value:** Look in the root for the key ```identified_by```. Traverse the elements and match on items where ```type: "Identifier"```. The value is in the ```content``` key.
   ```json
@@ -14,7 +14,7 @@
       ...
       {
         "type": "Identifier",
-        "content": "abc.123"
+        "content": "abc.123",
       },
       ...
     ],
@@ -22,7 +22,7 @@
   }
   ```
 - **identifiers_identifier_display:** Combine values from ```identifiers_identifier_value``` and traverse the same array looking for the ```identified_by``` array. The value is in the ```content``` key.
-  ```json
+```json
   {
     ...
     "identified_by":
@@ -42,10 +42,10 @@
     ],
     ...
   }
-  ```
+```
   The two arrays should be combined as one for the Solr value array.
-- **identifiers_identifier_type:** Look in the root for the key ```identified_by```. Traverse the elements and match on items where ```type: "Identifier"```. Iterate over the ```classified_as``` array and look for the ```_label``` key.
-  ```json
+- **identifiers_identifier_type:** Look in the root for the key ```identified_by```. Traverse the elements and match on items where ```type: "Identifier"```. Iterate over the ```classified_as``` array and look  for the ```id``` key to equal "http://vocab.getty.edu/aat/300435704". Grab the content from the ```_label``` key.
+```json
   {
     ...
     "identified_by":
@@ -53,11 +53,12 @@
       ...
       {
         "type": "Identifier",
-        "content": "abc.123"
+        "content": "abc.123",
         "classsified_by": [
           {
             ...
-            "type": "Call Number"
+           "id": "http://vocab.getty.edu/aat/300435704",
+            "label": "System-Assigned Number"          
           }
         ]
       },
@@ -65,7 +66,7 @@
     ],
     ...
   }
-  ```
+```
 - **identifiers_identifier_label:** No longer used. Duplicate of ```identifiers_identifier_type_tim```.
 - **basic_descriptors_supertypes_level:** Combines four level of supertypes into one field. This will contain the lowest level item (including specific type).  The level 1-4 hierarchy should be created outside of the fulltext search.  To get the supertypes, traverse the ```classified_as``` array, match ```type: "Type"``` and find the ```_label``` key.
 ```json
@@ -316,7 +317,7 @@
       ...
 ...
 ```
-- **notes_note_display** Look in the root for the ```referred_to_by``` array. Traverse the array and grab the ```content`` key.
+- **notes_note_display** Look in the root for the ```referred_to_by``` array. Traverse the array and grab the ```content``` key.
 ```json
 "referred_to_by": [
     {
@@ -371,7 +372,7 @@
   - ```removed_by```
   - ```destroyed_by```
   - ```removed_by```
-Once you have matched on one of those keys, traverse the inner array of objects. Match the ```type``` key equal to "Person" or "Group". Once you find that value, look for the ```identified_by``` array and iterate over the items. Grab the ```name``` key.
+Once you have matched on one of those keys, traverse the inner array of objects. Match the ```type``` key equal to "Person" or "Group". Once you find that value, look for the ```identified_by``` array and iterate over the items. Check if the ```type``` key equals "Name". If it does, grab the value of the ```content``` key.
 ```json
   "produced_by": {
     "type": "Production",
@@ -386,12 +387,12 @@ Once you have matched on one of those keys, traverse the inner array of objects.
             {
               "type": "Name",
               "content": "Rome"
-                }
+            }
           ],
 ...
 ```
 - **agents_production** Not implemented.
-- **agents_agent_sortname** Follow the values for **agents_agent_display**. Check if there is a array key called ```classified_as```. Traverse the array and look for an ```id ```of "http://vocab.getty.edu/aat/300404672", which has an equivalent value of "Sorting Name" in the ```name ``` key.
+- **agents_agent_sortname** Follow the values for **agents_agent_display**. Check if there is a array key called ```classified_as```. Traverse the array and look for an ```id ```of "http://vocab.getty.edu/aat/300404672", which has an equivalent value of "Sorting Name" in the ```_label ``` key.
 ```json
   "produced_by": {
     "type": "Production",
@@ -453,9 +454,33 @@ Once you have matched on one of those keys, traverse the inner object and then t
       ]
 ...
 ```
-- **agents_agent_role_code** Not implemented.
-- **agents_agent_type_display** Not implemented.
-- **agents_agent_culture_display** Not implemented.
+- **agents_agent_role_code** Same as ***agents_agent_role_label***.
+- **agents_agent_type_display** Same as ***agents_agent_role_label***.
+- **agents_agent_culture_display** Look through the object where the ```type``` key equals "Group". Check the ```classified_as``` arraay to verify that it has an object with either an ```id``` of "http://vocab.getty.edu/aat/300387171" or a ```_label``` of "Culture". At the same level as ```classified_as```, there should be a ```identified_by``` key. Traverse that array and find the object with ```type``` equal to the "Name" value. Pull the value from the ```content``` key.
+```json
+  "shows": [
+    {
+      "id": "http://lux.yale.edu/visual/yuag:99389",
+      "type": "VisualItem",
+      "about": [
+        {
+          "type": "Group",
+          "classified_as": [
+            {
+              "id": "http://vocab.getty.edu/aat/300387171",
+              "type": "Type",
+              "_label": "Culture"
+            }
+          ],
+          "identified_by": [
+            {
+              "type": "Name",
+              "content": "Roman"
+            }
+          ]
+        },
+...
+```
 - **agents_agent_context_display** Not implemented.
 - **places_place_display** This will be in a number of different places. Look through the whole object for the following keys:
   - ```created_by```
@@ -464,7 +489,7 @@ Once you have matched on one of those keys, traverse the inner object and then t
   - ```removed_by```
   - ```destroyed_by```
   - ```removed_by```
-Once you have matched on one of those keys, looks for the ```took_place_at``` or ```used_for``` key. Traverse the array and find the ```identified_by``` key.  Traverse that array and grab the ```content``` key. 
+Once you have matched on one of those keys, look for the ```took_place_at``` or ```used_for``` key. Traverse the array and find the ```identified_by``` key.  Traverse that array and grab the ```content``` key. 
 ```json
     "produced_by": {
         "took_place_at": [{
@@ -476,7 +501,14 @@ Once you have matched on one of those keys, looks for the ```took_place_at``` or
             }],
 ...
 ```
-- **places_place_role_label** Not implemented.
+- **places_place_role_label** This will be in a number of different places. Look through the whole object for the following keys:
+  - ```created_by```
+  - ```produced_by```
+  - ```encountered_by```
+  - ```removed_by```
+  - ```destroyed_by```
+  - ```removed_by```
+Once you have matched on one of those keys, look for the ```took_place_at``` or ```used_for``` key. Traverse the array  and look for the ```classified_as``` array. Traverse the array and grab the  ```_label``` key.
 - **places_place_role_code** Not implemented.
 - **places_place_type_display** Not implemented.
 - **places_place_coordinates_type** Not implemented.
@@ -509,7 +541,7 @@ Once you have matched on one of those keys, looks for the key ```timespan```.  L
   - ```removed_by```
   - ```destroyed_by```
   - ```removed_by```
-Once you have matched on one of those keys, looks for the key ```timespan```.  Look in that key for the ```begin_of_the_begin``` key.
+Once you have matched on one of those keys, look for the key ```timespan```.  Look in that key for the ```begin_of_the_begin``` key.
 ```json
     "produced_by": {
         "type": "Production",
@@ -528,7 +560,7 @@ Once you have matched on one of those keys, looks for the key ```timespan```.  L
   - ```removed_by```
   - ```destroyed_by```
   - ```removed_by```
-Once you have matched on one of those keys, looks for the key ```timespan```.  Look in that key for the ```end_of_the_end``` key.
+Once you have matched on one of those keys, look for the key ```timespan```.  Look in that key for the ```end_of_the_end``` key.
 ```json
     "produced_by": {
         "type": "Production",
@@ -540,7 +572,27 @@ Once you have matched on one of those keys, looks for the key ```timespan```.  L
         }
 ...
 ```
-- **dates_date_role_label** Not implemented.
+- **dates_date_role_label** This will be in a number of different places. Look through the whole object for the following keys:
+  - ```created_by```
+  - ```produced_by```
+  - ```encountered_by```
+  - ```removed_by```
+  - ```destroyed_by```
+  - ```removed_by```
+Once you have matched on one of those keys, looks for the key ```timespan```.  Inside of that key, find the ```identified_by``` key array. Traverse the array and grab the ```content``` value. 
+```json
+  "timespan": {
+    "type": "TimeSpan",
+    "begin_of_the_begin": "-42-01-01T00:00:00Z",
+    "end_of_the_end": "-42-01-01T00:00:00Z",
+    "identified_by": [{
+      "type": "Name",
+      "content": "42 B.C.",
+      ...
+    }]
+  ...
+  }
+```
 - **dates_date_role_code** Not implemented.
 - **dates_year_earliest** Derive from ***dates_date_earliest***.
 - **dates_year_latest** Derive from ***dates_date_latest***.
@@ -636,9 +688,9 @@ Once you have matched on one of those keys, looks for the key ```timespan```.  L
   }
 ]
 ```
-- **rights_original_rights_status_display**
+- **rights_original_rights_status_display** Not implemented.
 - **rights_original_rights_copyright_credit_display** Not implemented.
-- **rights_original_rights_notes**  Not implemented.
+- **rights_original_rights_notes**  TBD.
 - **rights_original_rights_type** Not implemented.
 - **rights_original_rights_type_label** Not implemented.
 - **digital_assets_asset_rights_status_display**
@@ -646,8 +698,41 @@ Once you have matched on one of those keys, looks for the key ```timespan```.  L
 - **digital_assets_asset_rights_type** Not implemented.
 - **digital_assets_asset_rights_type_label** Not implemented.
 - **digital_assets_asset_type** Not implemented.
-- **digital_assets_asset_caption_display**
-- **hierarchies_hierarchy_type** Not implemented.
+- **digital_assets_asset_caption_display** Look for the root ```representation``` key array. Traverse the array and look for the ```digitally_shown_by``` array. Traverse the array and find the ```referred_to_by``` array.  Traverse that array and find ```classified_as``` key. Traverse that array and check if the ```id``` equals "http://vocab.getty.edu/aat/300418049" or the ```_label``` equals "Description". If it matches, go up one level and grab the ```content``` key.
+```json
+ "representation": [
+    {
+      "type": "VisualItem",
+      "digitally_shown_by": [
+        {
+          "type": "DigitalObject",
+          ...
+          "referred_to_by": [
+            {
+              "type": "LinguisticObject",
+              "content": "cropped to image",
+              "classified_as": [
+                {
+                  "id": "http://vocab.getty.edu/aat/300411780",
+                  "type": "Type",
+                  "_label": "Description",
+                  "classified_as": [
+                    {
+                      "id": "http://vocab.getty.edu/aat/300418049",
+                      "type": "Type",
+                      "_label": "Brief Text"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+...
+``` 
+- **hierarchies_hierarchy_type** TBD.
 - **hierarchies_root_internal_identifier** Not implemented.
 - **hierarchies_descendant_count** Not implemented.
 - **hierarchies_maximum_depth** Not implemented.
