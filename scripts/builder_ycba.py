@@ -4,10 +4,12 @@ from io import BytesIO
 import re
 from cromulent import model, vocab
 from cromulent.extract import date_cleaner
+from cromulent.model import factory
 import uuid
 import sys
 import pathlib
 import json
+import pymysql
 
 if not sys.warnoptions:
     import warnings
@@ -587,17 +589,40 @@ fileidx = 0
 files = os.listdir(source)
 files.sort(key=lambda x: int(x[:-4]))
 
-for fn in files:
-	if int(fn.replace('.xml', '')) < SKIP_UNTIL:
-		continue
-	print(fn)
+# Process LIDO from db
+f=open("t.properties","r")
+lines=f.readlines()
+pw_from_t=lines[0]
+f.close()
+db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.com",
+					 user = "oaipmhuser",
+					 password = pw_from_t,
+					 database = "oaipmh")
+cursor = db.cursor()
+sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005) order by cast(local_identifier as signed) asc limit 3"
+lido = []
+ids = []
+try:
+	cursor.execute(sql)
+	results = cursor.fetchall()
+	for row in results:
+		ids.append(row[0])
+		lido.append(row[1])
 
+except:
+	print("Error: unable to fetch data")
+db.close()
 
-	fh = open(os.path.join(source, fn))
-	data = fh.read()
-	fh.close()
-	fo = BytesIO(data.encode('utf-8'))
-	dom = etree.parse(fo, parser)
+cnt = -1
+for doc in lido:
+	cnt += 1
+	fn = ids[cnt]
+	#print(fn)
+	#print(doc)
+	#print(type(doc))
+	doc_str = ''.join(doc)
+	#dom = etree.parse(doc_str, parser)
+	dom = etree.fromstring(doc_str,parser)
 
 	to_serialize = []
 
@@ -1414,8 +1439,9 @@ for fn in files:
 		# Process immediately before serializing
 		rewrite_crom_ids(record)
 		if not hasattr(record, 'identified_by'):
-			print(f"No name/identifier for {record}")
-			raise ValueError()
+			print(f"{factory.toString(record, compact=False)}")
+			print(f"No name/identifier for {outfn}")
+			#raise ValueError()
 
 		model.factory.toFile(record, compact=False, filename=outfn)
 		DB.commit()
