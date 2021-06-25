@@ -565,7 +565,14 @@ def make_place(elm, localid=None):
 
 	# thankfully placeClassification is not used elsewhere, otherwise we would process it here
 	return (where, "serialize")
-
+def lookup_or_map(key):
+	if DB[key]:
+		uu = DB[key]
+	else:
+		uu = f"urn:uuid:{uuid.uuid4()}"
+		DB[key] = uu
+		DB.commit()
+	return uu
 
 # Site Specific
 
@@ -599,7 +606,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 					 password = pw_from_t,
 					 database = "oaipmh")
 cursor = db.cursor()
-sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005) order by cast(local_identifier as signed) asc limit 3"
+sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526) order by cast(local_identifier as signed) asc limit 4"
 lido = []
 ids = []
 try:
@@ -635,11 +642,9 @@ for doc in lido:
 		if '-' in t:
 			t = t[t.rfind('-')+1:]
 
-	if t and not ALWAYS_UUID:
-		wid = model.factory.base_url + "object/" + t
-		wvid = model.factory.base_url + "visual/" + t
-	else:
-		wid = wvid = AUTO_URI
+	wid = lookup_or_map(f"ycba:object/{t}")
+	wvid = lookup_or_map(f"ycba:visual/{t}")
+	#note passing AUTOURI as ident to models generates a new autouri
 	what = model.HumanMadeObject(ident=wid)
 	whatvi = model.VisualItem(ident=wvid)
 	what.shows = whatvi
@@ -1431,21 +1436,23 @@ for doc in lido:
 		do.access_point = model.DigitalObject(ident=img)
 		whatvi.digitally_shown_by = do
 		to_serialize.append(do)
-
 	for record in to_serialize:
 		outdir = os.path.join(model.factory.base_dir, record._uri_segment, record.id[9:11])
 		pathlib.Path(outdir).mkdir(parents=True, exist_ok=True)
 		outfn = os.path.join(outdir, record.id[9:] + ".json")
 		# Process immediately before serializing
-		rewrite_crom_ids(record)
+
+		#rewrite_crom_ids(record) #try to do w/o this method
 		if not hasattr(record, 'identified_by'):
 			print(f"{factory.toString(record, compact=False)}")
 			print(f"No name/identifier for {outfn}")
 			#raise ValueError()
-
 		model.factory.toFile(record, compact=False, filename=outfn)
 		DB.commit()
 		NAMEDB.commit()
+	#for diagnostic
+	for x in DB:
+		print(x)
 	fileidx += 1
 	if fileidx > PROCESS_RECS:
 		break
