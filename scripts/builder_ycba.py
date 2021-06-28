@@ -114,7 +114,7 @@ def make_concept(conc, clss=model.Type):
 		NAMEDB.commit()
 	return t
 
-def get_concept_uri(f, clss=None, map_to_uuid=True):
+def get_concept_uri(f, clss=None, map_to_uuid=False):
 	t = f.text 
 	if not t or t in ["-1", '0']:
 		return None
@@ -913,11 +913,12 @@ for doc in lido:
 
 		actor_source = "object"
 		# Type:
+		note_etypes = ["Curatorial comment","Curatorial description","Gallery label","Published catalog entry"]
 		etyp = event.xpath('./lido:eventType/lido:conceptID/text()', namespaces=nss)
 		if not etyp:
 			etypname = event.xpath('./lido:eventType/lido:term/text()', namespaces=nss)
 			if etypname:
-				if etypname[0] == "Curatorial comment":
+				if etypname[0] in note_etypes:
 					# Make an attributed statement
 					if stmt:
 						note = vocab.Note()
@@ -945,18 +946,8 @@ for doc in lido:
 			eventobj = model.Production()
 			what.produced_by = eventobj
 		elif etyp == "300054686":
-			# publishing of a work ABOUT this object
-			actor_source = "pub"
-			work = model.LinguisticObject(ident=AUTO_URI)
-			what.referred_to_by = work
-			to_serialize.append(work)
-			eventobj = vocab.Publishing()
-			work.used_for = eventobj
-			names = event.xpath('./lido:eventName/lido:appellationValue/text()', namespaces=nss)
-			if names:
-				work.identified_by = model.Name(value=names[0])
-				work._label = names[0]
-
+			#bypassing etyp publications, handling this instead in relworks
+			continue
 		elif etyp == "300054766":
 			# exhibition
 			# exhibition's eventID is not unique across venues AND not unique across records
@@ -1353,33 +1344,35 @@ for doc in lido:
 
 	for rw in relWorks:
 		disp = rw.xpath('./lido:displayObject/text()', namespaces=nss)
-		oids = rw.xpath('./lido:object/lido:objectID', namespaces=nss)
+		#oids = rw.xpath('./lido:object/lido:objectID', namespaces=nss)
+		biboids = rw.xpath('./lido:object/lido:objectID[@lido:source="YCBA TMS Bibliographic Module record referenceID"]', namespaces=nss)
 
-		work = model.LinguisticObject(ident=AUTO_URI)
-		what.referred_to_by = work
-		to_serialize.append(work)
-		if disp:
-			work.referred_to_by = vocab.Description(content=disp[0])
-			# XXX This should use oclc metadata
-			tdisp = disp[0] if len(disp[0]) < 100 else disp[0][:96] + '...'
-			work._label = tdisp
-			work.identified_by = vocab.PrimaryName(content=tdisp)
+		for oid in biboids:
+			if oid.text and oid.text.strip():
+				bib_uu = lookup_or_map(f"ycba:bibid/{oid.text.strip()}")
+				work = model.LinguisticObject(ident=bib_uu)
+				what.referred_to_by = work
+				to_serialize.append(work)
+				if disp:
+					work.referred_to_by = vocab.Description(content=disp[0])
+					# XXX This should use oclc metadata
+					tdisp = disp[0] if len(disp[0]) < 100 else disp[0][:96] + '...'
+					work._label = tdisp
+					work.identified_by = vocab.PrimaryName(content=tdisp)
 
-		for oid in oids:
-			uri = get_concept_uri(oid)
-			if uri and uri[0] == "#":
-				# instead record as an identifier
-				if oid.text and oid.text.strip():
+				uri = get_concept_uri(oid)
+				if uri and uri[0] == "#":
+					# instead record as an identifier
 					iden = model.Identifier(value=oid.text.strip())
 					# XXX assign type based on the source
 					src = oid.xpath('./@lido:source', namespaces=nss)
 					if src:
 						iden.referred_to_by = vocab.SourceStatement(value=src[0])
 					work.identified_by = iden
-			elif uri:
-				# make equivalent
-				if not hasattr(work, 'equivalent') or not uri in [x.id for x in work.equivalent]:
-					work.equivalent = model.LinguisticObject(ident=uri)
+				elif uri:
+					# make equivalent
+					if not hasattr(work, 'equivalent') or not uri in [x.id for x in work.equivalent]:
+						work.equivalent = model.LinguisticObject(ident=uri)
 
 	# Credit line/Rights
 	# where rightsWorkSet/rightsType/conceptID/text() == 500303557 
@@ -1450,12 +1443,16 @@ for doc in lido:
 		model.factory.toFile(record, compact=False, filename=outfn)
 		DB.commit()
 		NAMEDB.commit()
-	#for diagnostic
-	for x in DB:
-		print(x)
 	fileidx += 1
 	if fileidx > PROCESS_RECS:
 		break
+
+#for diagnostic
+for x in DB:
+	print(x)
+print("--------")
+for x in NAMEDB:
+	print(x)
 
 missed_terms = {"techniques": missing_techniques, "subjects": missing_subjects, "materials": missing_materials}
 fh = open('ycba_missed_terms.json', 'w')
