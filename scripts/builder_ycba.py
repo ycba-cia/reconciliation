@@ -984,7 +984,12 @@ for doc in lido:
 		elif etyp == "300157782":
 			# acquisition, make a prov entry - but only one of prov per object in YCBA
 			# No need to look these up as won't be referred to elsewhere
-			provEntry = vocab.ProvenanceEntry(ident=AUTO_URI)
+			eid = event.xpath('./lido:eventID/text()', namespaces=nss)
+			if eid:
+				prov_uu = lookup_or_map(f"ycba:prov/{eid[0]}")
+			else:
+				prov_uu = AUTO_URI
+			provEntry = vocab.ProvenanceEntry(ident=prov_uu)
 			to_serialize.append(provEntry)
 			provEntry._label = f"Acquisition of \"{what._label}\""
 			provEntry.identified_by = vocab.PrimaryName(content=provEntry._label)
