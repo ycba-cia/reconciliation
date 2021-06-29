@@ -798,7 +798,8 @@ for doc in lido:
 
 		hp = descMd.xpath('./lido:objectIdentificationWrap/lido:repositoryWrap/lido:repositorySet/lido:repositoryName/lido:legalBodyWeblink/text()', namespaces=nss)
 		if hp:
-			do = vocab.WebPage(ident=AUTO_URI, label=f"Home page for {lbl}")
+			hp_uu = lookup_or_map(f"ycba:digobj/ycbahome")
+			do = vocab.WebPage(ident=hp_uu, label=f"Home page for {lbl}")
 			do.identified_by = model.Name(content=do._label)
 			do.format="text/html"
 			do.access_point= model.DigitalObject(ident=hp[0])
@@ -971,7 +972,7 @@ for doc in lido:
 				exid = None
 			if exid:
 				euu = map_uuid("ycba", f"exhibition/{exid}")
-				eventobj = vocab.Exhibition(ident=AUTO_URI)
+				eventobj = vocab.Exhibition(ident=euu)
 				eventobj.identified_by = vocab.SystemNumber(value=exid)
 				to_serialize.append(eventobj)
 			# XXX Check if this is a second date for the same eventID
@@ -1395,10 +1396,12 @@ for doc in lido:
     # recordWrap -- homepage
 	homepage = adminMd.xpath('./lido:recordWrap/lido:recordInfoSet/lido:recordInfoLink[./@lido:formatResource="html"]/text()', namespaces=nss)
 	if homepage:
+		hp_id = homepage[0].strip().split("/")[-1].replace(":","-")
+		hp_uu = lookup_or_map(f"ycba:digobj/{hp_id}")
 		try:
-			hp = vocab.WebPage(ident=AUTO_URI, label=f"Homepage for \"{what._label}\"")
+			hp = vocab.WebPage(ident=hp_uu, label=f"Homepage for \"{what._label}\"")
 		except:
-			hp = vocab.WebPage(ident=AUTO_URI, label=f"Homepage for object")
+			hp = vocab.WebPage(ident=hp_uu, label=f"Homepage for object")
 		hp.identified_by = vocab.PrimaryName(content=hp._label)
 		hp.format = "text/html"
 		hp.access_point = model.DigitalObject(ident=homepage[0].strip())
