@@ -147,6 +147,10 @@ def get_concept_uri(f, clss=None, map_to_uuid=False):
 		return t
 	elif vocab in ['lc call number', 'oclc number']:
 		return None
+	elif vocab in ['ycba tms bibliographic module record referenceid']:
+		t = f"bibid/{t}"
+		uu = map_uuid('ycba', t)
+		return uu
 	else:
 		print(f"Cannot assign a URI for {vocab}:{t}")
 		return None
@@ -1349,8 +1353,8 @@ for doc in lido:
 
 		for oid in biboids:
 			if oid.text and oid.text.strip():
-				bib_uu = lookup_or_map(f"ycba:bibid/{oid.text.strip()}")
-				work = model.LinguisticObject(ident=bib_uu)
+				uri = get_concept_uri(oid)
+				work = model.LinguisticObject(ident=uri)
 				what.referred_to_by = work
 				to_serialize.append(work)
 				if disp:
@@ -1359,8 +1363,6 @@ for doc in lido:
 					tdisp = disp[0] if len(disp[0]) < 100 else disp[0][:96] + '...'
 					work._label = tdisp
 					work.identified_by = vocab.PrimaryName(content=tdisp)
-
-				uri = get_concept_uri(oid)
 				if uri and uri[0] == "#":
 					# instead record as an identifier
 					iden = model.Identifier(value=oid.text.strip())
