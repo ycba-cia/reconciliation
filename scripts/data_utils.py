@@ -31,7 +31,8 @@ entity_templates = {
 	"viaf": "https://viaf.org/viaf/{ident}",
 	"fast": "http://id.worldcat.org/fast/{ident}",
 	"glotto": "https://glottolog.org/resource/languoid/id/{ident}",
-	"ycba": "http://collection.britishart.yale.edu/id/{ident}" # ident needs to be place/1234
+	"ycba": "http://collection.britishart.yale.edu/id/{ident}",
+	"hponline": "https://www.historyofparliamentonline.org/{ident}"
 }
 
 prefix_by_uri = {}

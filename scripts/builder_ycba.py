@@ -1,4 +1,8 @@
+import time
+start_time = time.time()
 import os
+import os.path
+from os import path
 from lxml import etree
 from io import BytesIO
 import re
@@ -10,6 +14,8 @@ import sys
 import pathlib
 import json
 import pymysql
+import filecmp
+
 
 if not sys.warnoptions:
     import warnings
@@ -217,6 +223,10 @@ def make_actor(a, source=""):
 				if src in ['ycba', 'local']:
 					if not val in ["-1", "0"]:
 						uu = map_uuid(src, f"actor/{val}", automap=False)
+				elif src == "history of parliament":
+					sep = "/"
+					val = sep.join(val.split("/")[3:7])
+					uu = map_uuid("hponline", val)
 				elif val:
 					try:
 						uu = map_uuid(src, val, automap=False)
@@ -613,6 +623,7 @@ cursor = db.cursor()
 sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526) order by cast(local_identifier as signed) asc limit 4"
 lido = []
 ids = []
+processed = []
 try:
 	cursor.execute(sql)
 	results = cursor.fetchall()
@@ -1440,6 +1451,8 @@ for doc in lido:
 		whatvi.digitally_shown_by = do
 		to_serialize.append(do)
 	for record in to_serialize:
+		if record.id[9:] in processed:
+			continue
 		outdir = os.path.join(model.factory.base_dir, record._uri_segment, record.id[9:11])
 		pathlib.Path(outdir).mkdir(parents=True, exist_ok=True)
 		outfn = os.path.join(outdir, record.id[9:] + ".json")
@@ -1450,7 +1463,17 @@ for doc in lido:
 			print(f"{factory.toString(record, compact=False)}")
 			print(f"No name/identifier for {outfn}")
 			#raise ValueError()
-		model.factory.toFile(record, compact=False, filename=outfn)
+
+		checkfn = os.path.join(model.factory.base_dir,"checkrecord.json")
+		model.factory.toFile(record, compact=False, filename=checkfn)
+		if not path.exists(outfn):
+			print(f"New:{outfn}")
+			model.factory.toFile(record, compact=False, filename=outfn)
+		same = filecmp.cmp(outfn, checkfn)
+		if not same:
+			print(f"Update:{outfn}")
+			model.factory.toFile(record, compact=False, filename=outfn)
+		processed.append(record.id[9:])
 		DB.commit()
 		NAMEDB.commit()
 	fileidx += 1
@@ -1458,14 +1481,15 @@ for doc in lido:
 		break
 
 #for diagnostic
-for x in DB:
-	print(x)
-print("--------")
-for x in NAMEDB:
-	print(x)
+#for x in DB:
+#	print(x)
+#print("--------")
+#for x in NAMEDB:
+#	print(x)
 
 missed_terms = {"techniques": missing_techniques, "subjects": missing_subjects, "materials": missing_materials}
 fh = open('ycba_missed_terms.json', 'w')
 outs = json.dumps(missed_terms)
 fh.write(outs)
 fh.close()
+print("--- %s seconds ---" % (time.time() - start_time))
