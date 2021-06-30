@@ -620,7 +620,8 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 					 password = pw_from_t,
 					 database = "oaipmh")
 cursor = db.cursor()
-sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526) order by cast(local_identifier as signed) asc limit 4"
+#sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526) order by cast(local_identifier as signed) asc limit 4"
+sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
 lido = []
 ids = []
 processed = []
@@ -644,8 +645,11 @@ for doc in lido:
 	#print(type(doc))
 	doc_str = ''.join(doc)
 	#dom = etree.parse(doc_str, parser)
-	dom = etree.fromstring(doc_str,parser)
-
+	try:
+		dom = etree.fromstring(doc_str,parser)
+	except Exception as e:
+		print(f"ERROR parsing doc {fn} Exception {e}")
+		continue
 	to_serialize = []
 
 	# <lido:lidoRecID lido:source="Yale Center for British Art" lido:type="local">YCBA/lido-TMS-17</lido:lidoRecID>
