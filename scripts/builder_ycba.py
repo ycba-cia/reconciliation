@@ -189,7 +189,6 @@ def make_actor(a, source=""):
 	
 	# source: object, life, pub, subject
 	# Use in this order of precedence
-
 	idents = []
 	ids = a.xpath('./lido:actorID', namespaces=nss)
 	for aid in ids:
@@ -620,8 +619,8 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 					 password = pw_from_t,
 					 database = "oaipmh")
 cursor = db.cursor()
-#sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526) order by cast(local_identifier as signed) asc limit 4"
-sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
+sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526) order by cast(local_identifier as signed) asc limit 4"
+#sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
 lido = []
 ids = []
 processed = []
@@ -1468,15 +1467,16 @@ for doc in lido:
 			print(f"No name/identifier for {outfn}")
 			#raise ValueError()
 
-		checkfn = os.path.join(model.factory.base_dir,"checkrecord.json")
-		model.factory.toFile(record, compact=False, filename=checkfn)
 		if not path.exists(outfn):
 			print(f"New:{outfn}")
 			model.factory.toFile(record, compact=False, filename=outfn)
-		same = filecmp.cmp(outfn, checkfn)
-		if not same:
-			print(f"Update:{outfn}")
-			model.factory.toFile(record, compact=False, filename=outfn)
+		else:
+			checkfn = os.path.join(model.factory.base_dir, "checkrecord.json")
+			model.factory.toFile(record, compact=False, filename=checkfn)
+			same = filecmp.cmp(outfn, checkfn)
+			if not same:
+				print(f"Update:{outfn}")
+				model.factory.toFile(record, compact=False, filename=outfn)
 		processed.append(record.id[9:])
 		DB.commit()
 		NAMEDB.commit()
@@ -1485,8 +1485,15 @@ for doc in lido:
 		break
 
 #for diagnostic
+#i = -1
 #for x in DB:
+#	i += 1
 #	print(x)
+#	if i > 5:
+#		break
+#for x in DB:
+#	if "wikidata" in x[0]:
+#		print(x)
 #print("--------")
 #for x in NAMEDB:
 #	print(x)
