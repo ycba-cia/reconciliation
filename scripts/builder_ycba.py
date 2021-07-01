@@ -15,6 +15,7 @@ import pathlib
 import json
 import pymysql
 import filecmp
+import datetime
 
 
 if not sys.warnoptions:
@@ -578,6 +579,7 @@ def make_place(elm, localid=None):
 
 	# thankfully placeClassification is not used elsewhere, otherwise we would process it here
 	return (where, "serialize")
+
 def lookup_or_map(key):
 	if DB[key]:
 		uu = DB[key]
@@ -587,6 +589,16 @@ def lookup_or_map(key):
 		DB.commit()
 	return uu
 
+def record_new_activities():
+		sql = "INSERT INTO activity (ycbaluxid,entitytype,statustype,created,updated) VALUES (%s,%s,%s,%s,%s)"
+		#print(newactivities)
+		cursor_act.executemany(sql, newactivities)
+		db_act.commit()
+def record_updated_activities():
+	sql = "UPDATE activity SET statustype = %s,updated = %s WHERE ycbaluxid = %s"
+	#print(updatedactivities)
+	cursor_act.executemany(sql, updatedactivities)
+	db_act.commit()
 # Site Specific
 
 # local:1281 and local:1253 are both YCBA, which is ULAN/500303557
@@ -609,6 +621,18 @@ fileidx = 0
 files = os.listdir(source)
 files.sort(key=lambda x: int(x[:-4]))
 
+# connect to activity db
+f=open("t.properties","r")
+lines=f.readlines()
+pw_from_t=lines[1]
+dbschema=lines[2]
+f.close()
+db_act = pymysql.connect(host = "spinup-db0017cd.cluster-c9ukc6s0rmbg.us-east-1.rds.amazonaws.com",
+					 user = "admin",
+					 password = pw_from_t.strip(),
+					 database = dbschema.strip())
+cursor_act = db_act.cursor()
+
 # Process LIDO from db
 f=open("t.properties","r")
 lines=f.readlines()
@@ -624,6 +648,8 @@ sql = "select local_identifier, xml from metadata_record where local_identifier 
 lido = []
 ids = []
 processed = []
+newactivities = []
+updatedactivities = []
 try:
 	cursor.execute(sql)
 	results = cursor.fetchall()
@@ -1467,16 +1493,25 @@ for doc in lido:
 			print(f"No name/identifier for {outfn}")
 			#raise ValueError()
 
+		record_status = "same"
 		if not path.exists(outfn):
-			print(f"New:{outfn}")
 			model.factory.toFile(record, compact=False, filename=outfn)
+			record_status = "new"
+			ts = time.time()
+			timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+			print(f"New    {record.id} {timestamp} {record._uri_segment}")
+			newactivities.append((record.id, record._uri_segment, record_status, timestamp, timestamp))
 		else:
 			checkfn = os.path.join(model.factory.base_dir, "checkrecord.json")
 			model.factory.toFile(record, compact=False, filename=checkfn)
 			same = filecmp.cmp(outfn, checkfn)
 			if not same:
-				print(f"Update:{outfn}")
 				model.factory.toFile(record, compact=False, filename=outfn)
+				record_status = "update"
+				ts = time.time()
+				timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+				print(f"Update    {record.id} {timestamp} {record._uri_segment}")
+				updatedactivities.append((record_status,timestamp,record.id))
 		processed.append(record.id[9:])
 		DB.commit()
 		NAMEDB.commit()
@@ -1498,9 +1533,13 @@ for doc in lido:
 #for x in NAMEDB:
 #	print(x)
 
+record_new_activities()
+record_updated_activities()
+
 missed_terms = {"techniques": missing_techniques, "subjects": missing_subjects, "materials": missing_materials}
 fh = open('ycba_missed_terms.json', 'w')
 outs = json.dumps(missed_terms)
 fh.write(outs)
 fh.close()
+db_act.close()
 print("--- %s seconds ---" % (time.time() - start_time))
