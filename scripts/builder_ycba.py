@@ -616,7 +616,7 @@ pw_from_t=lines[0]
 f.close()
 db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.com",
 					 user = "oaipmhuser",
-					 password = pw_from_t,
+					 password = pw_from_t.strip(),
 					 database = "oaipmh")
 cursor = db.cursor()
 sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526) order by cast(local_identifier as signed) asc limit 4"
