@@ -91,6 +91,21 @@ event_role_rels.update(new_rels)
 
 NAMEDB = LMDB('ycba_name_db', open=True)
 
+sets = {
+	"ycba:ps": "Yale Center for British Art (YCBA): Paintings and Sculpture",
+	"ycba:pd": "Yale Center for British Art (YCBA): Prints and Drawings",
+	"ycba:frames": "Yale Center for British Art (YCBA): Frames"
+}
+to_serialize = []
+sets_model = {}
+for (k,v) in sets.items():
+	setuu = map_uuid("ycba", f"set/{k}")
+	setobj = vocab.Set(ident=setuu)
+	setobj.identified_by = model.Identifier(value=k)
+	setobj.identified_by = model.Name(value=v)
+	setobj._label = v
+	sets_model[k] = setobj
+	to_serialize.append(setobj)
 
 missing_materials = {}
 missing_techniques = {}
@@ -656,18 +671,31 @@ try:
 	for row in results:
 		ids.append(row[0])
 		lido.append(row[1])
-
 except:
-	print("Error: unable to fetch data")
+	print("Error: unable to fetch LIDO data")
+
+sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526) order by cast(local_identifier as signed) asc limit 4"
+#sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
+id_and_set = {}
+try:
+	cursor.execute(sql)
+	results = cursor.fetchall()
+	for row in results:
+		id_and_set[row[0]] = row[1]
+except:
+	print("Error: unable to fetch SET data")
 db.close()
 
 cnt = -1
 for doc in lido:
 	cnt += 1
 	fn = ids[cnt]
+	set = id_and_set[fn]
+	#print("SEE BELOW")
 	#print(fn)
 	#print(doc)
 	#print(type(doc))
+	#print(set)
 	doc_str = ''.join(doc)
 	#dom = etree.parse(doc_str, parser)
 	try:
@@ -675,7 +703,7 @@ for doc in lido:
 	except Exception as e:
 		print(f"ERROR parsing doc {fn} Exception {e}")
 		continue
-	to_serialize = []
+	#to_serialize = [] #moved higher up to accommodate sets
 
 	# <lido:lidoRecID lido:source="Yale Center for British Art" lido:type="local">YCBA/lido-TMS-17</lido:lidoRecID>
 	fields = dom.xpath(f'{wrap}/lido:lido/lido:lidoRecID', namespaces=nss)
@@ -697,6 +725,8 @@ for doc in lido:
 
 	to_serialize.append(what)
 	to_serialize.append(whatvi)
+
+	what.member_of = sets_model[set]
 
 
 	# Ignore category/conceptID, already in object instantiation
