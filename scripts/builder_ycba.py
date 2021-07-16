@@ -122,7 +122,14 @@ def make_concept(conc, clss=model.Type):
 	if not cid and not lbl:
 		# Nothing to make
 		return None
-	uri = get_concept_uri(cid[0]) if cid else "auto uuid"
+	cid_index = 0
+	loop = "true"
+	while (loop=="true"):
+		uri = get_concept_uri(cid[cid_index]) if cid else "auto uuid"
+		if not uri:
+			cid_index +=1
+		else:
+			loop = "false"
 	if not uri and ((not lbl) or lbl[0] == "not selected"):
 		return None
 	lbl = lbl[0] if lbl else ""
