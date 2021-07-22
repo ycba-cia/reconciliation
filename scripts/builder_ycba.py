@@ -331,7 +331,7 @@ def make_actor(a, source=""):
 			atype = None
 		# person, organization, institution, corporation, (empty)
 
-		if atype == "person":
+		if atype in ['person','constituent']:
 			pclss = model.Person
 		elif atype in ['organization', 'institution', 'corporation']:
 			pclss = model.Group
