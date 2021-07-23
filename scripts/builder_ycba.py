@@ -119,8 +119,11 @@ def make_concept(conc, clss=model.Type):
 	# pass in the parent of lido:conceptID, lido:term and make a Type with ident and label
 	cid = conc.xpath('./lido:conceptID', namespaces=nss)
 	lbl = conc.xpath('./lido:term/text()', namespaces=nss)
+	cidtype = conc.xpath('./lido:conceptID/@lido:type', namespaces=nss)
 	if not cid and not lbl:
 		# Nothing to make
+		return None
+	if cidtype[0] == "No ObjectWorkType for Record":
 		return None
 	cid_index = 0
 	loop = "true"
@@ -694,7 +697,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 					 password = pw_from_t.strip(),
 					 database = "oaipmh")
 cursor = db.cursor()
-sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526) order by cast(local_identifier as signed) asc limit 4"
+sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820) order by cast(local_identifier as signed) asc limit 5"
 #sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
 lido = []
 ids = []
@@ -710,14 +713,15 @@ try:
 except:
 	print("Error: unable to fetch LIDO data")
 
-sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526) order by cast(local_identifier as signed) asc limit 4"
+sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820) order by cast(local_identifier as signed) asc"
 #sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
 try:
 	cursor.execute(sql)
 	results = cursor.fetchall()
 	for row in results:
-		id_and_set[row[0]] = row[1]
+		if row[1] != "ycba:incomplete":
+			id_and_set[row[0]] = row[1]
 except:
 	print("Error: unable to fetch SET data")
 db.close()
