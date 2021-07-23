@@ -184,6 +184,35 @@ def get_concept_uri(f, clss=None, map_to_uuid=False):
 		print(f"Cannot assign a URI for {vocab}:{t}")
 		return None
 
+def make_object_concept(conc, clss=model.Type):
+	#based on make_concept for subjectObjects with different LIDO scheme than subjectConcept
+	#http://lido-schema.org/schema/v1.0/lido-v1.0-specification.pdf
+	cid = conc.xpath('./lido:object/lido:objectID', namespaces=nss)
+	lbl = conc.xpath('./lido:displayObject', namespaces=nss)
+	if not cid and not lbl:
+		# Nothing to make
+		return None
+	cid_index = 0
+	loop = "true"
+	while (loop=="true"):
+		uri = get_concept_uri(cid[cid_index]) if cid else "auto uuid"
+		if not uri:
+			cid_index +=1
+		else:
+			loop = "false"
+	if not uri and ((not lbl) or lbl[0] == "not selected"):
+		return None
+	lbl = lbl[0] if lbl else ""
+	if uri == "auto uuid" and lbl and f"concept:{lbl}" in NAMEDB:
+		uri = NAMEDB[f"concept:{lbl}"]
+	t = clss(ident=uri, label=lbl)
+	if uri == "auto uuid" and lbl:
+		# assign a UUID to the label
+		NAMEDB[f"concept:{lbl}"] = t.id
+		NAMEDB[t.id] = f"concept:{lbl}"
+		NAMEDB.commit()
+	return t
+
 def make_datetime(txt):
 	if txt in ['0', '9999']:
 		# this means "ongoing" (beginning/end)
@@ -1327,6 +1356,21 @@ for doc in lido:
 	subjs = descMd.xpath('./lido:objectRelationWrap/lido:subjectWrap/lido:subjectSet/lido:subject/lido:subjectConcept', namespaces=nss)
 	for sub in subjs:
 		t = make_concept(sub)
+
+		# If t is also a genre for the object, then it's the classification of the VI.
+		# Most others are depicted_entities
+		if t:
+			if not t.id:
+				try:
+					missing_subjects[t._label] += 1
+				except:
+					missing_subjects[t._label] = 1
+			else:
+				whatvi.about = t
+
+	subjs = descMd.xpath('./lido:objectRelationWrap/lido:subjectWrap/lido:subjectSet/lido:subject/lido:subjectObject', namespaces=nss)
+	for sub in subjs:
+		t = make_object_concept(sub)
 
 		# If t is also a genre for the object, then it's the classification of the VI.
 		# Most others are depicted_entities
