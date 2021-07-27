@@ -865,7 +865,7 @@ for doc in lido:
 	# type values:  always "inventory number"
 	fields = descMd.xpath('./lido:objectIdentificationWrap/lido:repositoryWrap/lido:repositorySet/lido:workID', namespaces=nss)
 	for f in fields:
-		value = f.xpath('./text()')
+		value = f.xpath('./text()')[0]
 		what.identified_by = vocab.AccessionNumber(value=value)
 
 	# repositorySet -- type is always current --> current owner
@@ -1074,6 +1074,11 @@ for doc in lido:
 			eid = event.xpath('./lido:eventID/text()', namespaces=nss)
 			edate = event.xpath('./lido:eventDate/lido:date/lido:earliestDate/text()', namespaces=nss)
 
+			if stmt:
+				exhlabel = stmt[0]
+			else:
+				exhlabel = "Unnamed Exhibition"
+
 			if eid and edate:
 				exid = f"{eid[0]}-{edate[0]}"
 			elif eid:
@@ -1082,13 +1087,13 @@ for doc in lido:
 				exid = None
 			if exid:
 				euu = map_uuid("ycba", f"exhibition/{exid}")
-				eventobj = vocab.Exhibition(ident=euu)
+				eventobj = vocab.Exhibition(ident=euu,label=exhlabel)
 				eventobj.identified_by = vocab.SystemNumber(value=exid)
 				to_serialize.append(eventobj)
 			# XXX Check if this is a second date for the same eventID
 			# if so make a parent exhibition
 			else:
-				eventobj = vocab.Exhibition(ident=AUTO_URI)
+				eventobj = vocab.Exhibition(ident=AUTO_URI,label=exhlabel)
 				# no id to match against :(
 
 		elif etyp == "300157782":
@@ -1287,7 +1292,7 @@ for doc in lido:
 				pname = f"place:{lbl}"
 				if pname in NAMEDB:
 					puu = NAMEDB[pname]
-					where = model.Place(ident=puu)
+					where = model.Place(ident=puu,label=display[0])
 				else:
 					where = model.Place(ident=AUTO_URI, label=display[0])
 					where.identified_by = model.Name(value=display[0])
