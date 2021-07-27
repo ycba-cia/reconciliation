@@ -205,7 +205,7 @@ def make_object_concept(conc, clss=model.Type):
 			loop = "false"
 	if not uri and ((not lbl) or lbl[0] == "not selected"):
 		return None
-	lbl = lbl[0] if lbl else ""
+	lbl = lbl[0].text.rstrip() if lbl else ""
 	if uri == "auto uuid" and lbl and f"concept:{lbl}" in NAMEDB:
 		uri = NAMEDB[f"concept:{lbl}"]
 	t = clss(ident=uri, label=lbl)
@@ -697,7 +697,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 					 password = pw_from_t.strip(),
 					 database = "oaipmh")
 cursor = db.cursor()
-sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820) order by cast(local_identifier as signed) asc limit 5"
+sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
 #sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
 lido = []
 ids = []
@@ -713,7 +713,7 @@ try:
 except:
 	print("Error: unable to fetch LIDO data")
 
-sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820) order by cast(local_identifier as signed) asc"
+sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
 #sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
 try:
