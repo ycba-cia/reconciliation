@@ -26,7 +26,13 @@ from ycba_prefs import *
 
 from identifiers import map_uuid, map_uuid_uri, DB, rewrite_crom_ids
 from data_utils import entity_templates, validate_wikidata, validate_ulan
-from lmdb_utils import LMDB 
+from lmdb_utils import LMDB
+
+if len(sys.argv) > 1:
+	config1 = sys.argv[1]
+else:
+	config1 = "prod"
+print(config1)
 
 # Default to blank nodes and override as needed
 model.factory.auto_assign_id = False
@@ -128,7 +134,10 @@ def make_concept(conc, clss=model.Type):
 	cid_index = 0
 	loop = "true"
 	while (loop=="true"):
-		uri = get_concept_uri(cid[cid_index]) if cid else "auto uuid"
+		try:
+			uri = get_concept_uri(cid[cid_index]) if cid else "auto uuid"
+		except:
+			loop = "false"
 		if not uri:
 			cid_index +=1
 		else:
@@ -697,8 +706,12 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 					 password = pw_from_t.strip(),
 					 database = "oaipmh")
 cursor = db.cursor()
-sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-#sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
+
+if config1 == "test":
+	#sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (7) order by cast(local_identifier as signed) asc"
+else:
+	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
 lido = []
 ids = []
 processed = []
@@ -713,8 +726,11 @@ try:
 except:
 	print("Error: unable to fetch LIDO data")
 
-sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-#sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
+if config1 == "test":
+	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (7) order by cast(local_identifier as signed) asc"
+else:
+	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
 try:
 	cursor.execute(sql)
