@@ -857,7 +857,7 @@ for doc in lido:
 			ct = vocab.SignatureStatement
 		elif typ in ['mark', 'marks']:
 			ct = vocab.MarkingsStatement
-		stmt = ct(value=value)
+		stmt = ct(value=value[0])
 		what.referred_to_by = stmt
 
 
