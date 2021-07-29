@@ -746,7 +746,11 @@ cnt = -1
 for doc in lido:
 	cnt += 1
 	fn = ids[cnt]
-	set = id_and_set[fn]
+	try:
+		set = id_and_set[fn]
+	except:
+		print(f"ERROR finding set for {fn}")
+		continue
 	#print("SEE BELOW")
 	#print(fn)
 	#print(doc)
