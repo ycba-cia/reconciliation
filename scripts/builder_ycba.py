@@ -97,27 +97,52 @@ event_role_rels.update(new_rels)
 
 NAMEDB = LMDB('ycba_name_db', open=True)
 
-sets = {
-	"ycba:ps": "Yale Center for British Art (YCBA): Paintings and Sculpture",
-	"ycba:pd": "Yale Center for British Art (YCBA): Prints and Drawings",
-	"ycba:frames": "Yale Center for British Art (YCBA): Frames"
-}
-to_serialize = []
-sets_model = {}
-for (k,v) in sets.items():
-	setuu = map_uuid("ycba", f"set/{k}")
-	setobj = vocab.Set(ident=setuu)
-	setobj.identified_by = model.Identifier(value=k)
-	setobj.identified_by = model.Name(value=v)
-	setobj._label = v
-	sets_model[k] = setobj
-	to_serialize.append(setobj)
-
 missing_materials = {}
 missing_techniques = {}
 missing_subjects = {}
 
+processed = []
+def serialize_method(serialize_array):
+	for record in serialize_array:
+		if record.id[9:] in processed:
+			continue
+		outdir = os.path.join(model.factory.base_dir, record._uri_segment, record.id[9:11])
+		pathlib.Path(outdir).mkdir(parents=True, exist_ok=True)
+		outfn = os.path.join(outdir, record.id[9:] + ".json")
+		# Process immediately before serializing
 
+		#rewrite_crom_ids(record) #try to do w/o this method
+		if not hasattr(record, 'identified_by'):
+			print(f"{factory.toString(record, compact=False)}")
+			print(f"No name/identifier for {outfn}")
+			#raise ValueError()
+
+		record_status = "same"
+		if not path.exists(outfn):
+			model.factory.toFile(record, compact=False, filename=outfn)
+			record_status = "new"
+			ts = time.time()
+			timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+			print(f"New    {record.id} {timestamp} {record._uri_segment}")
+			newactivities.append((record.id, record._uri_segment, record_status, timestamp, timestamp))
+		else:
+			checkfn = os.path.join(model.factory.base_dir, "checkrecord.json")
+			model.factory.toFile(record, compact=False, filename=checkfn)
+			same = filecmp.cmp(outfn, checkfn)
+			if not same:
+				model.factory.toFile(record, compact=False, filename=outfn)
+				record_status = "update"
+				ts = time.time()
+				timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+				print(f"Update    {record.id} {timestamp} {record._uri_segment}")
+				updatedactivities.append((record_status,timestamp,record.id))
+			else:
+				ts = time.time()
+				timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+				print(f"Same    {record.id} {timestamp} {record._uri_segment}")
+		processed.append(record.id[9:])
+		DB.commit()
+		NAMEDB.commit()
 def print_elm(elm):	
 	print(etree.tostring(elm, pretty_print=True).decode('utf-8'))	
 
@@ -662,7 +687,23 @@ def record_updated_activities():
 	#print(updatedactivities)
 	cursor_act.executemany(sql, updatedactivities)
 	db_act.commit()
-# Site Specific
+
+sets = {
+	"ycba:ps": "Yale Center for British Art (YCBA): Paintings and Sculpture",
+	"ycba:pd": "Yale Center for British Art (YCBA): Prints and Drawings",
+	"ycba:frames": "Yale Center for British Art (YCBA): Frames"
+}
+serialize_global = []
+sets_model = {}
+for (k,v) in sets.items():
+	setuu = map_uuid("ycba", f"set/{k}")
+	setobj = vocab.Set(ident=setuu)
+	setobj.identified_by = model.Identifier(value=k)
+	setobj.identified_by = model.Name(value=v)
+	setobj._label = v
+	sets_model[k] = setobj
+	serialize_global.append(setobj)
+serialize_method(serialize_global)
 
 # local:1281 and local:1253 are both YCBA, which is ULAN/500303557
 site_uu = map_uuid('ycba', 'place/site')
@@ -709,12 +750,11 @@ cursor = db.cursor()
 
 if config1 == "test":
 	#sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (7) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (1729) order by cast(local_identifier as signed) asc"
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
 lido = []
 ids = []
-processed = []
 newactivities = []
 updatedactivities = []
 try:
@@ -728,7 +768,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (7) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (1729) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -763,7 +803,7 @@ for doc in lido:
 	except Exception as e:
 		print(f"ERROR parsing doc {fn} Exception {e}")
 		continue
-	#to_serialize = [] #moved higher up to accommodate sets
+	to_serialize = []
 
 	# <lido:lidoRecID lido:source="Yale Center for British Art" lido:type="local">YCBA/lido-TMS-17</lido:lidoRecID>
 	fields = dom.xpath(f'{wrap}/lido:lido/lido:lidoRecID', namespaces=nss)
@@ -1589,42 +1629,7 @@ for doc in lido:
 		do.access_point = model.DigitalObject(ident=img)
 		whatvi.digitally_shown_by = do
 		to_serialize.append(do)
-	for record in to_serialize:
-		if record.id[9:] in processed:
-			continue
-		outdir = os.path.join(model.factory.base_dir, record._uri_segment, record.id[9:11])
-		pathlib.Path(outdir).mkdir(parents=True, exist_ok=True)
-		outfn = os.path.join(outdir, record.id[9:] + ".json")
-		# Process immediately before serializing
-
-		#rewrite_crom_ids(record) #try to do w/o this method
-		if not hasattr(record, 'identified_by'):
-			print(f"{factory.toString(record, compact=False)}")
-			print(f"No name/identifier for {outfn}")
-			#raise ValueError()
-
-		record_status = "same"
-		if not path.exists(outfn):
-			model.factory.toFile(record, compact=False, filename=outfn)
-			record_status = "new"
-			ts = time.time()
-			timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-			print(f"New    {record.id} {timestamp} {record._uri_segment}")
-			newactivities.append((record.id, record._uri_segment, record_status, timestamp, timestamp))
-		else:
-			checkfn = os.path.join(model.factory.base_dir, "checkrecord.json")
-			model.factory.toFile(record, compact=False, filename=checkfn)
-			same = filecmp.cmp(outfn, checkfn)
-			if not same:
-				model.factory.toFile(record, compact=False, filename=outfn)
-				record_status = "update"
-				ts = time.time()
-				timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-				print(f"Update    {record.id} {timestamp} {record._uri_segment}")
-				updatedactivities.append((record_status,timestamp,record.id))
-		processed.append(record.id[9:])
-		DB.commit()
-		NAMEDB.commit()
+	serialize_method(to_serialize)
 	fileidx += 1
 	if fileidx > PROCESS_RECS:
 		break
