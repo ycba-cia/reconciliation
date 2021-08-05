@@ -102,6 +102,8 @@ missing_techniques = {}
 missing_subjects = {}
 
 processed = []
+newactivities = []
+updatedactivities = []
 def serialize_method(serialize_array):
 	for record in serialize_array:
 		if record.id[9:] in processed:
@@ -755,8 +757,7 @@ else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
 lido = []
 ids = []
-newactivities = []
-updatedactivities = []
+
 try:
 	cursor.execute(sql)
 	results = cursor.fetchall()
