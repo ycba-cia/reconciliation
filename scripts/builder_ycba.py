@@ -792,7 +792,7 @@ for doc in lido:
 		print(f"ERROR finding set for {fn}")
 		continue
 	#print("SEE BELOW")
-	#print(fn)
+	print(fn)
 	#print(doc)
 	#print(type(doc))
 	#print(set)
