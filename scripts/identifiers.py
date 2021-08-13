@@ -28,9 +28,21 @@ def map_uuid_uri(uri, automap=True):
 		return None
 	prefix = ""
 	for (k,v) in prefix_by_uri.items():
-		if uri.startswith(k):
+		base = "/".join(k.split("/")[0:3])
+		if uri.startswith(base):
 			prefix = v
-			uri = uri.replace(k, "")
+			if "aat" in uri:
+				prefix = "aat"
+			if "tgn" in uri:
+				prefix = "tgn"
+			if "ulan" in uri:
+				prefix = "ulan"
+			if "/names/" in uri:
+				prefix = "lcnaf"
+			if "subjects" in uri:
+				prefix = "lcsh"
+			# uri = uri.replace(k, "")
+			uri = uri.split("/")[-1]
 			break
 	if prefix:						
 		return map_uuid(prefix, uri, automap)
@@ -55,8 +67,9 @@ def map_uuid(vocab, ident, automap=True):
 		DB[uu] = {vocab:ident}
 		DB[f"{vocab}:{ident}"] = uu
 		DB.commit()
-		if vocab in fetch_templates:
-			fetch(vocab, ident)
+		#removing fetch 8/13/2021
+		#if vocab in fetch_templates:
+			#fetch(vocab, ident)
 		return uu
 
 def fetch_and_map(vocab, ident):

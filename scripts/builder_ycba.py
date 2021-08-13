@@ -577,9 +577,9 @@ def make_place(elm, localid=None):
 	prefid = None
 	for i2c in ids_to_check:
 		uu = map_uuid_uri(i2c, automap=False)
-		if uu and file_exists('place', uu):
-			return (model.Place(ident=uu), "cached")
-		elif uu:
+		#if uu and file_exists('place', uu):
+			#return (model.Place(ident=uu), "cached")
+		if uu:
 			break
 		if i2c.startswith('http://vocab.getty.edu/'):
 			prefid = i2c
@@ -609,8 +609,9 @@ def make_place(elm, localid=None):
 			if f"place:{n2c}" in NAMEDB:
 				# print(f"Found place - {n2c}")
 				uu = NAMEDB[f"place:{n2c}"]
-				if file_exists('place', uu):
-					return (model.Place(ident=uu), "cached")
+				#
+				#if file_exists('place', uu):
+					#return (model.Place(ident=uu), "cached")
 			if t == 'primary':
 				prefname = n2c
 			elif not prefname:
@@ -1570,7 +1571,7 @@ for doc in lido:
 					if src:
 						iden.referred_to_by = vocab.SourceStatement(value=src[0])
 					work.identified_by = iden
-				elif uri:
+				#elif uri:
 					# make equivalent
 					if not hasattr(work, 'equivalent') or not uri in [x.id for x in work.equivalent]:
 						work.equivalent = model.LinguisticObject(ident=uri)
