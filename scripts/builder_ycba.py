@@ -752,7 +752,7 @@ cursor = db.cursor()
 
 if config1 == "test":
 	#sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (1729) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (334) order by cast(local_identifier as signed) asc"
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
 lido = []
@@ -769,7 +769,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (1729) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (334) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1071,9 +1071,10 @@ for doc in lido:
 				mval = float(msv)
 			except:
 				print(str(msv))
-			dim = mtype(value=mval)
-			dim.unit = munit
-			what.dimension = dim
+			if mval > 0:
+				dim = mtype(value=mval)
+				dim.unit = munit
+				what.dimension = dim
 
 			# XXX process extent into a technique on an attributeassignment on the dimension
 			# per decision here: https://github.com/linked-art/linked.art/issues/251#issuecomment-697605983
@@ -1501,6 +1502,7 @@ for doc in lido:
 				# try to get relationship from display text
 				dispwds = disp[0].split()
 				rel = subjplace_rels.get(dispwds[0], "depicted")
+				place._label = disp[0]
 			else:
 				rel = "depicted"
 
