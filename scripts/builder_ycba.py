@@ -1166,7 +1166,8 @@ for doc in lido:
 			if eid:
 				prov_uu = lookup_or_map(f"ycba:prov/{eid[0]}")
 			else:
-				prov_uu = AUTO_URI
+				#prov_uu = AUTO_URI #ERJ 8/17/2021
+				prov_uu = lookup_or_map(f"ycba:prov/{fn}")
 			provEntry = vocab.ProvenanceEntry(ident=prov_uu)
 			to_serialize.append(provEntry)
 			provEntry._label = f"Acquisition of \"{what._label}\""
