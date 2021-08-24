@@ -48,6 +48,8 @@ model.factory.base_dir = output
 # Helper functions and global storage
 vocab.register_instance('troy ounces', {"parent": model.MeasurementUnit, "id": "300404394", "label": "troy ounces"})
 vocab.register_instance('pennyweight', {"parent": model.MeasurementUnit, "id": "300XXXXXX", "label": "pennyweight (dwt)"})
+vocab.register_vocab_class("AccessStatement", {"parent": model.LinguisticObject, "id": "300133046", "label": "Access Statement","metatype": "brief text"})
+
 unknownUnit = model.MeasurementUnit(ident="urn:uuid:28DE5DAD-CA3A-4424-A3FA-25683637C622", label="Unknown Unit")
 instances = vocab.instances
 
@@ -758,7 +760,7 @@ cursor = db.cursor()
 
 if config1 == "test":
 	#sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,334,1312,1330) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,334,1312,1330,14445) order by cast(local_identifier as signed) asc"
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
 lido = []
@@ -775,7 +777,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,334,1312,1330) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,334,1312,1330,14445) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -798,6 +800,22 @@ for doc in lido:
 	except:
 		print(f"ERROR finding set for {fn}")
 		continue
+	#aeon variables
+	aeonSet= set
+	aeonLabel = "Accessible by request in the study Room"
+	aeonHost = "https://aeon-mssa.library.yale.edu/aeon.dll?"
+	aeonAction = "10"
+	aeonForm = "20"
+	aeonValue = "GenericRequestPD"
+	aeonSite = "YCBA"
+	aeonCallNumber = ""
+	aeonItemTitle = ""
+	aeonItemAuthor = ""
+	aeonItemDate = ""
+	aeonFormat = ""
+	aeonLocation = ""
+	aeonMfhdID = ""
+	aeonEADNumber = f"https://collections.britishart.yale.edu/catalog/tms:{fn}"
 	#print("SEE BELOW")
 	print(fn)
 	#print(doc)
@@ -880,7 +898,7 @@ for doc in lido:
 			continue
 		else:
 			value = value[0]
-
+		aeonItemTitle = value
 		typ = f.xpath('./@lido:type', namespaces=nss)[0]
 		pref = f.xpath('./lido:appellationValue/@lido:pref', namespaces=nss)[0]
 		n = model.Name(value=value)
@@ -934,7 +952,7 @@ for doc in lido:
 	for f in fields:
 		value = f.xpath('./text()')[0]
 		what.identified_by = vocab.AccessionNumber(value=value)
-
+		aeonCallNumber = value
 	# repositorySet -- type is always current --> current owner
 	#      <lido:repositoryName>
 	#        <lido:legalBodyID lido:source="ULAN" lido:type="local">500303557</lido:legalBodyID>
@@ -1009,8 +1027,12 @@ for doc in lido:
 
 	onview = descMd.xpath(f'{pop}/lido:namePlaceSet/lido:appellationValue[@lido:label="On view or not"]/text()', namespaces=nss)[0]
 	if onview:
-		# XXX This is a bit lame
-		what.referred_to_by = vocab.Note(content=onview)
+		if onview == "Not on view" and aeonSet == "ycba:pd":
+			accessStmtURL = aeonHost + "Action=" + aeonAction + "&Form=" + aeonForm + "&Value=" + aeonValue + "&Site=" + aeonSite + "&Callnumber=" + aeonCallNumber + "&ItemTitle=" + aeonItemTitle + "&ItemAuthor=" + aeonItemAuthor + "&ItemDate=" + aeonItemDate + "&Format=" + aeonFormat + "&Location=" + aeonLocation + "&mfhdID=" + aeonMfhdID + "&EADNumber=" + aeonEADNumber
+			accessStmt = f'<a href="{accessStmtURL}">{aeonLabel}</a>'
+		else:
+			accessStmt = onview
+		what.referred_to_by = vocab.AccessStatement(content=accessStmt)
 
 	# eg ycba-14282
 	#  <lido:displayStateEditionWrap>
@@ -1252,7 +1274,7 @@ for doc in lido:
 		matstmt = event.xpath('./lido:eventMaterialsTech/lido:displayMaterialsTech/text()', namespaces=nss)
 		if matstmt:
 			what.referred_to_by = vocab.MaterialStatement(value=matstmt[0])
-
+			aeonFormat = matstmt[0]
 		mats = event.xpath('./lido:eventMaterialsTech/lido:materialsTech/lido:termMaterialsTech', namespaces=nss)
 		for m in mats:
 			# type can be:  proof (??), medium/material, support, technique
@@ -1295,6 +1317,7 @@ for doc in lido:
 			actor_elm = a.xpath("./lido:actorInRole/lido:actor", namespaces=nss)[0]
 			(who, srlz) = make_actor(actor_elm, source=actor_source)
 
+			aeonItemAuthor = who._label
 			actorObjs.append(who)
 			if srlz == "serialize":
 				if not hasattr(who, 'identified_by'):
