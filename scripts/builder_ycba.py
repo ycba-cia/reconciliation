@@ -32,6 +32,10 @@ if len(sys.argv) > 1:
 	config1 = sys.argv[1]
 else:
 	config1 = "prod"
+if len(sys.argv) > 2:
+	config2 = sys.argv[2]
+else:
+	config2 = "do_site_everytime"
 print(config1)
 
 # Default to blank nodes and override as needed
@@ -544,7 +548,7 @@ def make_actor(a, source=""):
 
 	return (who, "serialize")
 
-def make_place(elm, localid=None):
+def make_place(elm, localid=None,issite=False):
 	# take a lido:place element and make a Place
 	# Check if we already have the place
 
@@ -630,9 +634,10 @@ def make_place(elm, localid=None):
 			NAMEDB[f"place:{prefname}"] = uu
 			NAMEDB[uu] = f"place:{prefname}"
 			NAMEDB.commit()
-
 	where = model.Place(ident=uu)
+	if issite == True:
 
+		where.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300240057", label="Gallery (place)")
 	for i2c in ids_to_check:
 		if i2c != localid:
 			where.equivalent = model.Place(ident=i2c)
@@ -753,7 +758,7 @@ cursor = db.cursor()
 
 if config1 == "test":
 	#sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (334) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,334,1312,1330) order by cast(local_identifier as signed) asc"
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
 lido = []
@@ -770,7 +775,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (334) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,334,1312,1330) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -957,9 +962,9 @@ for doc in lido:
 	# We need siteplace for the concat location tree
 	pop = './lido:objectIdentificationWrap/lido:repositoryWrap/lido:repositorySet/lido:repositoryLocation/lido:partOfPlace'
 	site = descMd.xpath(f'{pop}[./lido:namePlaceSet/lido:appellationValue/@lido:label="Site"]', namespaces=nss)[0]
-	(siteplace, srlz) = make_place(site, 'ycba:place/site')
+	(siteplace, srlz) = make_place(site, 'ycba:place/site',True)
 
-	if not done_owner:
+	if not done_owner or config2 == "do_site_everytime":
 		# This is boilerplate for owner and siteplace
 		done_owner = True
 		owner = vocab.MuseumOrg(ident=owner, label=lbl)
@@ -993,16 +998,12 @@ for doc in lido:
 			# only do the room
 			b = bits[1]
 			localid = f"ycba-{b}"
-			build = f"ycba:place/{localid}" in DB
-			plid = map_uuid('ycba', f'place/{localid}')
-			if build:
-				pl = model.Place(ident=plid, label=f"YCBA Location {b}")
-				pl.identified_by = model.Name(content=pl._label)
-				pl.part_of = parent
-				to_serialize.append(pl)				
-			else:
-				pl = model.Place(ident=plid)
-			what.current_location = pl
+			galid = map_uuid('ycba', f'place/{localid}')
+			gal = vocab.Gallery(ident=galid, label=f"YCBA Location {b}")
+			gal.identified_by = model.Name(value=f"YCBA Location {b}")
+			gal.part_of = parent
+			to_serialize.append(gal)
+			what.current_location = gal
 	else:
 		what.current_location = siteplace
 
