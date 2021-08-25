@@ -810,7 +810,7 @@ for doc in lido:
 	aeonSite = "YCBA"
 	aeonCallNumber = ""
 	aeonItemTitle = ""
-	aeonItemAuthor = ""
+	aeonItemAuthor = []
 	aeonItemDate = ""
 	aeonFormat = ""
 	aeonLocation = ""
@@ -898,8 +898,9 @@ for doc in lido:
 			continue
 		else:
 			value = value[0]
-		aeonItemTitle = value
 		typ = f.xpath('./@lido:type', namespaces=nss)[0]
+		if typ == "Repository title":
+			aeonItemTitle = value
 		pref = f.xpath('./lido:appellationValue/@lido:pref', namespaces=nss)[0]
 		n = model.Name(value=value)
 		what.identified_by = n
@@ -1024,15 +1025,6 @@ for doc in lido:
 			what.current_location = gal
 	else:
 		what.current_location = siteplace
-
-	onview = descMd.xpath(f'{pop}/lido:namePlaceSet/lido:appellationValue[@lido:label="On view or not"]/text()', namespaces=nss)[0]
-	if onview:
-		if onview == "Not on view" and aeonSet == "ycba:pd":
-			accessStmtURL = aeonHost + "Action=" + aeonAction + "&Form=" + aeonForm + "&Value=" + aeonValue + "&Site=" + aeonSite + "&Callnumber=" + aeonCallNumber + "&ItemTitle=" + aeonItemTitle + "&ItemAuthor=" + aeonItemAuthor + "&ItemDate=" + aeonItemDate + "&Format=" + aeonFormat + "&Location=" + aeonLocation + "&mfhdID=" + aeonMfhdID + "&EADNumber=" + aeonEADNumber
-			accessStmt = f'<a href="{accessStmtURL}">{aeonLabel}</a>'
-		else:
-			accessStmt = onview
-		what.referred_to_by = vocab.AccessStatement(content=accessStmt)
 
 	# eg ycba-14282
 	#  <lido:displayStateEditionWrap>
@@ -1317,7 +1309,7 @@ for doc in lido:
 			actor_elm = a.xpath("./lido:actorInRole/lido:actor", namespaces=nss)[0]
 			(who, srlz) = make_actor(actor_elm, source=actor_source)
 
-			aeonItemAuthor = who._label
+			aeonItemAuthor.append(who._label)
 			actorObjs.append(who)
 			if srlz == "serialize":
 				if not hasattr(who, 'identified_by'):
@@ -1448,6 +1440,19 @@ for doc in lido:
 				# print(f"assigning: {t._label}")
 				eventobj.classified_as = t
 			# XXX this should maybe be `technique` rather than `classified_as`
+
+	onview = descMd.xpath(f'{pop}/lido:namePlaceSet/lido:appellationValue[@lido:label="On view or not"]/text()', namespaces=nss)[0]
+	if onview:
+		if onview == "Not on view" and aeonSet == "ycba:pd":
+			if len(aeonItemAuthor) > 0:
+				aeonItemAuthor1 = aeonItemAuthor[0]
+			else:
+				aeonItemAuthor1 = ""
+			accessStmtURL = aeonHost + "Action=" + aeonAction + "&Form=" + aeonForm + "&Value=" + aeonValue + "&Site=" + aeonSite + "&Callnumber=" + aeonCallNumber + "&ItemTitle=" + aeonItemTitle + "&ItemAuthor=" + aeonItemAuthor1 + "&ItemDate=" + aeonItemDate + "&Format=" + aeonFormat + "&Location=" + aeonLocation + "&mfhdID=" + aeonMfhdID + "&EADNumber=" + aeonEADNumber
+			accessStmt = f'<a href="{accessStmtURL}">{aeonLabel}</a>'
+		else:
+			accessStmt = onview
+		what.referred_to_by = vocab.AccessStatement(content=accessStmt)
 
 	# objectRelationWrap / subjects
 	subjs = descMd.xpath('./lido:objectRelationWrap/lido:subjectWrap/lido:subjectSet/lido:subject/lido:subjectConcept', namespaces=nss)
