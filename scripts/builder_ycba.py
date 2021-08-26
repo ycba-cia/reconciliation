@@ -760,7 +760,7 @@ cursor = db.cursor()
 
 if config1 == "test":
 	#sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,334,1312,1330,14445,40842) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,334,1312,1330,4107,14445,40842) order by cast(local_identifier as signed) asc"
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
 lido = []
@@ -777,7 +777,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,334,1312,1330,14445,40842) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,334,1312,1330,4107,14445,40842) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1311,7 +1311,8 @@ for doc in lido:
 			actor_elm = a.xpath("./lido:actorInRole/lido:actor", namespaces=nss)[0]
 			(who, srlz) = make_actor(actor_elm, source=actor_source)
 
-			aeonItemAuthor.append(who._label)
+			if hasattr(who,'_label'):
+				aeonItemAuthor.append(who._label)
 			actorObjs.append(who)
 			if srlz == "serialize":
 				if not hasattr(who, 'identified_by'):
