@@ -1624,6 +1624,10 @@ for doc in lido:
 	if rightsurl and rightsterm:
 		what.referred_to_by = vocab.RightsStatement(ident=rightsurl1,label=rightsterm1)
 
+	#copyright
+	copyright = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="object copyright" and text()="55"]/../../lido:creditLine/text()',namespaces=nss)
+	if copyright:
+		what.referred_to_by = vocab.RightsStatement(value=copyright[0])
 	# creditline
 	# this xpath should work as the following is hardcoded
 	#<lido:conceptID lido:source="YCBA" lido:type="local" lido:label="object ownership">500303557</lido:conceptID>
