@@ -1612,12 +1612,21 @@ for doc in lido:
     
 	adminMd = dom.xpath(f'{wrap}/lido:lido/lido:administrativeMetadata', namespaces=nss)[0]
 
-	# copyright
-	rights = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet[./lido:rightsType/lido:conceptID/text()="300055611"]/lido:creditLine/text()', namespaces=nss)
-	if rights:
-		what.referred_to_by = vocab.RightsStatement(value=rights[0])
+	#rights
+	rightsurl1 = ""
+	rightsterm1 = ""
+	rightsurl = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="object copyright"]/following-sibling::*[@lido:label="url"]/text()',namespaces=nss)
+	if rightsurl:
+		rightsurl1 = rightsurl[0]
+	rightsterm = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="object copyright"]/following-sibling::*[not(@lido:label="url")]/text()',namespaces=nss)
+	if rightsterm:
+		rightsterm1 = rightsterm[0]
+	if rightsurl and rightsterm:
+		what.referred_to_by = vocab.RightsStatement(ident=rightsurl1,label=rightsterm1)
 
 	# creditline
+	# this xpath should work as the following is hardcoded
+	#<lido:conceptID lido:source="YCBA" lido:type="local" lido:label="object ownership">500303557</lido:conceptID>
 	credit = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet[./lido:rightsType/lido:conceptID/text()="500303557"]/lido:creditLine/text()', namespaces=nss)
 	if credit:
 		what.referred_to_by= vocab.CreditStatement(value=credit[0])
