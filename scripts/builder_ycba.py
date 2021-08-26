@@ -760,7 +760,7 @@ cursor = db.cursor()
 
 if config1 == "test":
 	#sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,334,1312,1330,14445) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,334,1312,1330,14445,40842) order by cast(local_identifier as signed) asc"
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
 lido = []
@@ -777,7 +777,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,334,1312,1330,14445) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,334,1312,1330,14445,40842) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1071,7 +1071,7 @@ for doc in lido:
 		stmt = d.xpath('./lido:displayObjectMeasurements/text()', namespaces=nss)
 		if stmt:
 			what.referred_to_by = vocab.DimensionStatement(value=stmt[0])
-		extent = d.xpath('./lido:objectMeasurements/lido:measurementsSet/lido:extentMeasurements/text()', namespaces=nss)
+		extent = d.xpath('./lido:objectMeasurements/lido:extentMeasurements/text()', namespaces=nss)
 		mss = d.xpath('./lido:objectMeasurements/lido:measurementsSet', namespaces=nss)
 		for ms in mss:
 			mst = ms.xpath('./lido:measurementType/text()', namespaces=nss)[0]
@@ -1090,6 +1090,8 @@ for doc in lido:
 			if mval > 0:
 				dim = mtype(value=mval)
 				dim.unit = munit
+				if extent:
+					dim.classified_as = model.Type(ident=f"http://collection.britishart.yale.edu/element/{extent[0]}", label=extent[0])
 				what.dimension = dim
 
 			# XXX process extent into a technique on an attributeassignment on the dimension
