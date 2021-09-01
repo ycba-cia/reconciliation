@@ -1618,16 +1618,21 @@ for doc in lido:
 	#rights
 	rightsurl1 = ""
 	rightsterm1 = ""
+	copyright1 = ""
 	rightsurl = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="object copyright"]/following-sibling::*[@lido:label="url"]/text()',namespaces=nss)
 	if rightsurl:
 		rightsurl1 = rightsurl[0]
 	rightsterm = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="object copyright"]/following-sibling::*[not(@lido:label="url")]/text()',namespaces=nss)
 	if rightsterm:
 		rightsterm1 = rightsterm[0]
+	copyright = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="object copyright"]/../../lido:creditLine/text()',namespaces=nss)
+	if copyright:
+		copyright1 = copyright[0]
+	#if rightsurl and rightsterm:
 	if rightsurl and rightsterm:
-		what.referred_to_by = vocab.RightsStatement(ident=rightsurl1,label=rightsterm1)
+		what.referred_to_by = model.LinguisticObject(ident=rightsurl1,label=rightsterm1)
 
-	#copyright
+	#copyright statement
 	copyright = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="object copyright" and text()="55"]/../../lido:creditLine/text()',namespaces=nss)
 	if copyright:
 		what.referred_to_by = vocab.RightsStatement(value=copyright[0])
