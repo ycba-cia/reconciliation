@@ -3,6 +3,19 @@ start_time = time.time()
 import pymysql
 import json
 
+typemap = {
+	"activity": "Activity",
+	"digital": "DigitalObject",
+	"group": "Group",
+	"object": "HumanMadeObject",
+	"person": "Person",
+	"place": "Place",
+	"provenance": "Activity",
+	"set":"Set",
+	"text":"LinguisticObject",
+	"visual":"VisualItem"
+}
+
 # connect to activity db
 f=open("t.properties","r")
 lines=f.readlines()
@@ -18,13 +31,13 @@ cursor_act = db_act.cursor()
 
 sql = "select * from activity order by updated asc"
 entities = []
-bucket = "https://ycba-lux.s3.amazonaws.com/"
+bucket = "https://ycba-lux.s3.amazonaws.com/v3/"
 try:
 	cursor_act.execute(sql)
 	results = cursor_act.fetchall()
 	for row in results:
 		uri = ""
-		entities.append([bucket+row[2]+"/"+row[1][9:11]+"/"+row[1][9:]+".json",row[2],row[3],row[5].strftime('%Y-%m-%dT%H:%M:%SZ')])
+		entities.append([bucket+row[2]+"/"+row[1][0:2]+"/"+row[1]+".json",row[2],row[3],row[5].strftime('%Y-%m-%dT%H:%M:%SZ')])
 except Exception as e:
 	print(f"pymysql fetch Exception: {e}")
 
@@ -40,7 +53,7 @@ host = "https://ycba-lux.s3.amazonaws.com/activity_stream"
 for entity in entities:
 	#breakpoint()
 	if i % pagesize == 0 and i == 0:
-		current["@context"] = "http://iiif.io/api/discovery/0/context.json"
+		current["@context"] = "http://iiif.io/api/discovery/1/context.json"
 		current["id"] = f"{host}/page{int(page)}.json"
 		current["type"] = "OrderedCollectionPage"
 		current["startIndex"] = i
@@ -48,7 +61,7 @@ for entity in entities:
 		part_of["id"] = f"{host}/collection1.json"
 		part_of["type"] = "OrderedCollection"
 		current["partOf"] = part_of
-		collection["@context"] = "http://iiif.io/api/discovery/0/context.json"
+		collection["@context"] = "http://iiif.io/api/discovery/1/context.json"
 		collection["id"] = f"{host}/collection1.json"
 		collection["type"] = "OrderedCollection"
 		collection["totalItems"] = entities.__len__()
@@ -94,8 +107,8 @@ for entity in entities:
 	activity["type"] = entity[2]
 	object = {}
 	object["id"] = entity[0]
-	object["type"] = "json"
-	object["context"] = entity[1]
+	object["type"] = typemap[entity[1]]
+	object["format"] =  "application/ld+json;profile =\"https://linked.art/ns/v1/linked-art.json\""
 	activity["object"] = object
 	activity["endTime"] = entity[3]
 	ordered_items.append(activity)

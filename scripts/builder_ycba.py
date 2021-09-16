@@ -129,7 +129,7 @@ def serialize_method(serialize_array):
 		record_status = "same"
 		if not path.exists(outfn):
 			model.factory.toFile(record, compact=False, filename=outfn)
-			record_status = "new"
+			record_status = "New"
 			ts = time.time()
 			timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 			print(f"New    {record.id} {timestamp} {record._uri_segment}")
@@ -140,7 +140,7 @@ def serialize_method(serialize_array):
 			same = filecmp.cmp(outfn, checkfn)
 			if not same:
 				model.factory.toFile(record, compact=False, filename=outfn)
-				record_status = "update"
+				record_status = "Update"
 				ts = time.time()
 				timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 				print(f"Update    {record.id} {timestamp} {record._uri_segment}")
@@ -770,7 +770,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
@@ -788,7 +788,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
