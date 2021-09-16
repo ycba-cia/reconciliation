@@ -114,9 +114,10 @@ def serialize_method(serialize_array):
 	for record in serialize_array:
 		if record.id[9:] in processed:
 			continue
-		outdir = os.path.join(model.factory.base_dir, record._uri_segment, record.id[9:11])
+		#print(f"Record:{record.id}")
+		outdir = os.path.join(model.factory.base_dir, record._uri_segment, record.id.split("/")[5])
 		pathlib.Path(outdir).mkdir(parents=True, exist_ok=True)
-		outfn = os.path.join(outdir, record.id[9:] + ".json")
+		outfn = os.path.join(outdir, record.id.split("/")[6])
 		# Process immediately before serializing
 
 		#rewrite_crom_ids(record) #try to do w/o this method
@@ -132,7 +133,7 @@ def serialize_method(serialize_array):
 			ts = time.time()
 			timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 			print(f"New    {record.id} {timestamp} {record._uri_segment}")
-			newactivities.append((record.id, record._uri_segment, record_status, timestamp, timestamp))
+			newactivities.append((record.id.split("/")[6].replace(".json",""), record._uri_segment, record_status, timestamp, timestamp))
 		else:
 			checkfn = os.path.join(model.factory.base_dir, "checkrecord.json")
 			model.factory.toFile(record, compact=False, filename=checkfn)
@@ -143,7 +144,7 @@ def serialize_method(serialize_array):
 				ts = time.time()
 				timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 				print(f"Update    {record.id} {timestamp} {record._uri_segment}")
-				updatedactivities.append((record_status,timestamp,record.id))
+				updatedactivities.append((record_status,timestamp,record.id.split("/")[6].replace(".json","")))
 			else:
 				ts = time.time()
 				timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
@@ -414,7 +415,7 @@ def make_actor(a, source=""):
 			# in YCBA, these seem to be mostly groups
 			# XXX Make a list from the raw data
 			pclss = model.Group
-		who = pclss(ident=uu)
+		who = pclss(ident=urn_to_url_json(uu,"group"))
 		# Cache class
 
 		if not who_info:
@@ -636,7 +637,7 @@ def make_place(elm, localid=None,issite=False):
 			NAMEDB[f"place:{prefname}"] = uu
 			NAMEDB[uu] = f"place:{prefname}"
 			NAMEDB.commit()
-	where = model.Place(ident=uu)
+	where = model.Place(ident=urn_to_url_json(uu,"place"))
 	if issite == True:
 
 		where.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300240057", label="Gallery (place)")
@@ -698,6 +699,16 @@ def record_updated_activities():
 	cursor_act.executemany(sql, updatedactivities)
 	db_act.commit()
 
+def urn_to_url_json(s1,typ1):
+	#print(f"urn_to_url:{s1}")
+	#s4 = "https://lux.britishart.yale.edu/"
+	s4 = "https://ycba-lux.s3.amazonaws.com/v3/"
+	a = s1.split(":")
+	s2 = a[2]
+	s3 = s2[:2]
+	s4 = s4 + typ1 + "/" + s3 + "/" + s2 + ".json"
+	return s4
+
 sets = {
 	"ycba:ps": "Yale Center for British Art (YCBA): Paintings and Sculpture",
 	"ycba:pd": "Yale Center for British Art (YCBA): Prints and Drawings",
@@ -707,7 +718,7 @@ serialize_global = []
 sets_model = {}
 for (k,v) in sets.items():
 	setuu = map_uuid("ycba", f"set/{k}")
-	setobj = vocab.Set(ident=setuu)
+	setobj = vocab.Set(ident=urn_to_url_json(setuu,"set"))
 	setobj.identified_by = model.Identifier(value=k)
 	setobj.identified_by = model.Name(value=v)
 	setobj._label = v
@@ -759,8 +770,8 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	#sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,334,1312,1330,4107,14445,40842) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34) order by cast(local_identifier as signed) asc"
+	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
 lido = []
@@ -777,7 +788,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,334,1312,1330,4107,14445,40842) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -842,8 +853,8 @@ for doc in lido:
 	wid = lookup_or_map(f"ycba:object/{t}")
 	wvid = lookup_or_map(f"ycba:visual/{t}")
 	#note passing AUTOURI as ident to models generates a new autouri
-	what = model.HumanMadeObject(ident=wid)
-	whatvi = model.VisualItem(ident=wvid)
+	what = model.HumanMadeObject(ident=urn_to_url_json(wid,"object"))
+	whatvi = model.VisualItem(ident=urn_to_url_json(wvid,"visual"))
 	what.shows = whatvi
 	if t:
 		what.identified_by = vocab.SystemNumber(label="Local System Number", value=t)
@@ -986,7 +997,7 @@ for doc in lido:
 	if not done_owner or config2 == "do_site_everytime":
 		# This is boilerplate for owner and siteplace
 		done_owner = True
-		owner = vocab.MuseumOrg(ident=owner, label=lbl)
+		owner = vocab.MuseumOrg(ident=urn_to_url_json(owner,"group"), label=lbl)
 		owner.equivalent = model.Group(ident=entity_templates['ulan'].format(ident=bid))
 		owner.identified_by = model.Name(value=lbl)
 		owner.residence = siteplace
@@ -995,7 +1006,7 @@ for doc in lido:
 		hp = descMd.xpath('./lido:objectIdentificationWrap/lido:repositoryWrap/lido:repositorySet/lido:repositoryName/lido:legalBodyWeblink/text()', namespaces=nss)
 		if hp:
 			hp_uu = lookup_or_map(f"ycba:digobj/ycbahome")
-			do = vocab.WebPage(ident=hp_uu, label=f"Home page for {lbl}")
+			do = vocab.WebPage(ident=urn_to_url_json(hp_uu,"digital"), label=f"Home page for {lbl}")
 			do.identified_by = model.Name(content=do._label)
 			do.format="text/html"
 			do.access_point= model.DigitalObject(ident=hp[0])
@@ -1018,7 +1029,7 @@ for doc in lido:
 			b = bits[1]
 			localid = f"ycba-{b}"
 			galid = map_uuid('ycba', f'place/{localid}')
-			gal = vocab.Gallery(ident=galid, label=f"YCBA Location {b}")
+			gal = vocab.Gallery(ident=urn_to_url_json(galid,"place"), label=f"YCBA Location {b}")
 			gal.identified_by = model.Name(value=f"YCBA Location {b}")
 			gal.part_of = parent
 			to_serialize.append(gal)
@@ -1167,7 +1178,7 @@ for doc in lido:
 				exid = None
 			if exid:
 				euu = map_uuid("ycba", f"exhibition/{exid}")
-				eventobj = vocab.Exhibition(ident=euu,label=exhlabel)
+				eventobj = vocab.Exhibition(ident=urn_to_url_json(euu,"activity"),label=exhlabel)
 				eventobj.identified_by = vocab.SystemNumber(value=exid)
 				to_serialize.append(eventobj)
 			# XXX Check if this is a second date for the same eventID
@@ -1185,7 +1196,7 @@ for doc in lido:
 			else:
 				#prov_uu = AUTO_URI #ERJ 8/17/2021
 				prov_uu = lookup_or_map(f"ycba:prov/{fn}")
-			provEntry = vocab.ProvenanceEntry(ident=prov_uu)
+			provEntry = vocab.ProvenanceEntry(ident=urn_to_url_json(prov_uu,"provenance"))
 			to_serialize.append(provEntry)
 			provEntry._label = f"Acquisition of \"{what._label}\""
 			provEntry.identified_by = vocab.PrimaryName(content=provEntry._label)
@@ -1375,12 +1386,13 @@ for doc in lido:
 				pname = f"place:{lbl}"
 				if pname in NAMEDB:
 					puu = NAMEDB[pname]
-					where = model.Place(ident=puu,label=display[0])
+					where = model.Place(ident=urn_to_url_json(puu,"place"),label=display[0])
 				else:
-					where = model.Place(ident=AUTO_URI, label=display[0])
+					puu = f"urn:uuid:{uuid.uuid4()}"
+					where = model.Place(ident=urn_to_url_json(puu,"place"), label=display[0])
 					where.identified_by = model.Name(value=display[0])
-					NAMEDB[pname] = where.id
-					NAMEDB[where.id] = pname
+					NAMEDB[pname] = puu
+					NAMEDB[puu] = pname
 
 			if not where:
 				continue
@@ -1542,6 +1554,7 @@ for doc in lido:
 
 			if rel == "found":
 				# make a provenance entry for the encounter
+				prov_uu = lookup_or_map(f"ycba:prov/{what._label}")
 				pe = vocab.ProvenanceEntry(ident=AUTO_URI)
 				pe.identified_by = vocab.PrimaryName(content='Finding of "{what._label}"')
 				to_serialize.append(pe)
@@ -1587,7 +1600,7 @@ for doc in lido:
 		for oid in biboids:
 			if oid.text and oid.text.strip():
 				uri = get_concept_uri(oid)
-				work = model.LinguisticObject(ident=uri)
+				work = model.LinguisticObject(ident=urn_to_url_json(uri,"text"))
 				what.referred_to_by = work
 				to_serialize.append(work)
 				if disp:
@@ -1649,9 +1662,9 @@ for doc in lido:
 		hp_id = homepage[0].strip().split("/")[-1].replace(":","-")
 		hp_uu = lookup_or_map(f"ycba:digobj/{hp_id}")
 		try:
-			hp = vocab.WebPage(ident=hp_uu, label=f"Homepage for \"{what._label}\"")
+			hp = vocab.WebPage(ident=urn_to_url_json(hp_uu,"digital"), label=f"Homepage for \"{what._label}\"")
 		except:
-			hp = vocab.WebPage(ident=hp_uu, label=f"Homepage for object")
+			hp = vocab.WebPage(ident=urn_to_url_json(hp_uu,"digital"), label=f"Homepage for object")
 		hp.identified_by = vocab.PrimaryName(content=hp._label)
 		hp.format = "text/html"
 		hp.access_point = model.DigitalObject(ident=homepage[0].strip())
@@ -1670,6 +1683,7 @@ for doc in lido:
 		if typ in ['thumb', 'medium', 'large', 'original']:
 			images[typ] = uri			
 		elif typ == "http://iiif.io/api/presentation/2/context.json":
+			#iiif_uu = lookup_or_map(f"ycba:digobj/pres2-{uri.split("/")[-1]}")
 			do = model.DigitalObject()
 			do.conforms_to = model.InformationObject(ident="http://iiif.io/api/presentation")
 			do.format = "application/ld+json"
