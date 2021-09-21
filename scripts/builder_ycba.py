@@ -426,7 +426,7 @@ def make_actor(a, source=""):
 		if uu:
 			DB[uu] = who_info
 	else:
-		#breakpoint()
+		print("BADHAPPENING")
 		pclss = getattr(model, who_info['class'])
 		# break out and use existing, make this just a reference
 		return (pclss(ident=uu), "cached")
