@@ -307,7 +307,7 @@ def make_actor(a, source=""):
 	who_info = None
 	done_src = None
 	for (typ, src, val) in idents:
-		if typ in ['local', 'subjectActor']: 
+		if typ in ['local', 'subjectActor']:
 			# ycba : actor/nnnn
 			# print(f"{typ} / {src} / {val}")
 			if src:
@@ -408,14 +408,16 @@ def make_actor(a, source=""):
 
 		if atype in ['person','constituent']:
 			pclss = model.Person
+			who = pclss(ident=urn_to_url_json(uu, "person"))
 		elif atype in ['organization', 'institution', 'corporation']:
 			pclss = model.Group
+			who = pclss(ident=urn_to_url_json(uu, "group"))
 		else:
 			# print(f"no type on actor: {label}")
 			# in YCBA, these seem to be mostly groups
 			# XXX Make a list from the raw data
 			pclss = model.Group
-		who = pclss(ident=urn_to_url_json(uu,"group"))
+			who = pclss(ident=urn_to_url_json(uu, "group"))
 		# Cache class
 
 		if not who_info:
@@ -424,6 +426,7 @@ def make_actor(a, source=""):
 		if uu:
 			DB[uu] = who_info
 	else:
+		#breakpoint()
 		pclss = getattr(model, who_info['class'])
 		# break out and use existing, make this just a reference
 		return (pclss(ident=uu), "cached")
