@@ -773,7 +773,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,5005) order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
@@ -791,7 +791,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,5005) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1187,6 +1187,7 @@ for doc in lido:
 			# XXX Check if this is a second date for the same eventID
 			# if so make a parent exhibition
 			else:
+				#does this ever happen?
 				eventobj = vocab.Exhibition(ident=AUTO_URI,label=exhlabel)
 				# no id to match against :(
 
@@ -1324,7 +1325,6 @@ for doc in lido:
 		for a in actors:
 			actor_elm = a.xpath("./lido:actorInRole/lido:actor", namespaces=nss)[0]
 			(who, srlz) = make_actor(actor_elm, source=actor_source)
-
 			if hasattr(who,'_label'):
 				aeonItemAuthor.append(who._label)
 			actorObjs.append(who)
@@ -1367,6 +1367,9 @@ for doc in lido:
 		deathIndex = 0
 		foundedIndex = 0
 		resIndex = 0
+		activityIndex = 0
+		baptismIndex = 0
+		tourIndex = 0
 
 		for pl in places:
 			pltyp = pl.xpath('./@lido:type', namespaces=nss)
@@ -1411,7 +1414,7 @@ for doc in lido:
 				# Assign the place to the corresponding Person actor
 				# XXX These might already be assigned from a previous record
 				x = -1
-				# print(f"{pltyp} -- {where._label}")
+				#print(f"{pltyp} -- {where._label}")
 				for a in actorObjs:
 					if a.type == "Person":
 						x += 1
@@ -1427,7 +1430,13 @@ for doc in lido:
 							a.died.took_place_at = where
 							deathIndex += 1
 							break
-						elif pltyp in ["place of activity", "active place"]:
+						elif pltyp == "place of baptism" and x == baptismIndex:
+							baptismAct = model.Activity()
+							a.participated_in = baptismAct
+							baptismAct.took_place_at = where
+							baptismAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300069030", label="Baptism")
+							baptismIndex += 1
+							break
 							# just put all the places on all the roles of the first actor
 							# no way to know anything else
 							# e.g. 10751 has 1 actor with 2 roles, 3 places... none of which are the place for the event.
@@ -1436,7 +1445,24 @@ for doc in lido:
 							#for rl in who.carried_out:
 							#		rl.took_place_at = where
 							#break
-							pass
+						elif pltyp == "place of activity":
+							#print(f"In place of activity {x} {activityIndex}")
+							if activityIndex == 0:
+								activityAct = model.Activity()
+								a.participated_in = activityAct
+								activityAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300393177", label="Professional Activities")
+							activityAct.took_place_at = where
+							activityIndex += 1
+							break
+						elif pltyp == "place of visit/tour":
+							#print(f"In place of activity {x} {tourIndex}")
+							if tourIndex == 0:
+								tourAct = model.Activity()
+								a.participated_in = tourAct
+								tourAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300162867", label="Journeys")
+							tourAct.took_place_at = where
+							tourIndex += 1
+							break
 						elif pltyp == "place lived" and x == resIndex:
 							a.residence = where
 							resIndex += 1
@@ -1445,7 +1471,7 @@ for doc in lido:
 							a.formed_by.took_place_at = where
 							foundedIndex += 1
 							break
-						elif pltyp == "location": 
+						elif pltyp == "location":
 							# location of the group
 							a.residence = where
 
