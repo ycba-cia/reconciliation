@@ -461,7 +461,65 @@ def make_actor(a, source=""):
 				who.identified_by = model.Name(value=val)
 				if not hasattr(who, '_label'):
 					who._label = val
-	
+	nationalityConcepts = a.xpath('./lido:nationalityActor/lido:conceptID', namespaces=nss)
+	for nc in nationalityConcepts:
+		src = nc.xpath('./@lido:source', namespaces=nss)[0]
+		typ = nc.xpath('./@lido:type', namespaces=nss)[0]
+		label = nc.xpath('./@lido:label', namespaces=nss)[0]
+		txt = nc.xpath('./text()', namespaces=nss)[0]
+		#print(f"{src}|{typ}|{label}|{txt}")
+		pname = f"place:{label}"
+		if pname in NAMEDB:
+			puu = NAMEDB[pname]
+			where = model.Place(ident=urn_to_url_json(puu, "place"), label=label)
+			where.identified_by = model.Name(value=label) #is this right?
+			if src == "TGN":
+				where.equivalent = model.Place(ident=f"http://vocab.getty.edu/tgn/{txt}")
+		else:
+			puu = f"urn:uuid:{uuid.uuid4()}"
+			where = model.Place(ident=urn_to_url_json(puu, "place"), label=label)
+			where.identified_by = model.Name(value=label)
+			if src == "TGN":
+				where.equivalent = model.Place(ident=f"http://vocab.getty.edu/tgn/{txt}")
+			NAMEDB[pname] = puu
+			NAMEDB[puu] = pname
+
+		to_serialize.append(where)
+
+		pltyp = typ.lower()
+		if who.type == "Person":
+			if pltyp == "birth place":
+				if not hasattr(who, 'born'):
+					who.born = model.Birth()
+				who.born.took_place_at = where
+			elif pltyp == "death place":
+				if not hasattr(who, 'died'):
+					who.died = model.Death()
+				who.died.took_place_at = where
+			elif pltyp == "place of baptism":
+				baptismAct = model.Activity()
+				who.participated_in = baptismAct
+				baptismAct.took_place_at = where
+				baptismAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300069030", label="Baptism")
+			elif pltyp == "place of activity":
+				activityAct = model.Activity()
+				who.participated_in = activityAct
+				activityAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300393177",
+														   label="Professional Activities")
+				activityAct.took_place_at = where
+			elif pltyp == "place of visit/tour":
+				tourAct = model.Activity()
+				who.participated_in = tourAct
+				tourAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300162867", label="Journeys")
+				tourAct.took_place_at = where
+			elif pltyp == "place lived":
+				who.residence = where
+		elif who.type == "Group":
+			if pltyp == "founded":
+				who.formed_by.took_place_at = where
+			elif pltyp == "location":
+				who.residence = where
+
 	nationality = a.xpath('./lido:nationalityActor/lido:term/text()', namespaces=nss)
 	# No ConceptIDs for nationality
 	# and lots of free text eg "German, active in Britain (from 1676)"
@@ -488,15 +546,21 @@ def make_actor(a, source=""):
 			date = None
 		if date:
 			if who.type == "Person":
-				b = model.Birth()
-				who.born = b
+				if not hasattr(who, 'born'):
+					b = model.Birth()
+					who.born = b
+				ts = model.TimeSpan()
+				who.born.timespan = ts
+				ts.begin_of_the_begin = date[0]
+				ts.end_of_the_end = date[1]
 			elif who.type == "Group":
-				b = model.Formation()
-				who.formed_by = b
-			ts = model.TimeSpan()
-			b.timespan = ts
-			ts.begin_of_the_begin = date[0]
-			ts.end_of_the_end = date[1]
+				if not hasattr(who, 'formed_by'):
+					b = model.Formation()
+					who.formed_by = b
+				ts = model.TimeSpan()
+				who.formed_by.timespan = ts
+				ts.begin_of_the_begin = date[0]
+				ts.end_of_the_end = date[1]
 
 	deathDate = a.xpath('./lido:vitalDatesActor/lido:latestDate/text()', namespaces=nss)
 	if deathDate:
@@ -508,15 +572,21 @@ def make_actor(a, source=""):
 
 		if date and date[0] < "2020":
 			if who.type == "Person":
-				d = model.Death()
-				who.died = d
+				if not hasattr(who, 'died'):
+					d = model.Death()
+					who.died = d
+				ts = model.TimeSpan()
+				who.died.timespan = ts
+				ts.begin_of_the_begin = date[0]
+				ts.end_of_the_end = date[1]
 			elif who.type == "Group":
-				d = model.Dissolution()
-				who.dissolved_by = d
-			ts = model.TimeSpan()
-			d.timespan = ts
-			ts.begin_of_the_begin = date[0]
-			ts.end_of_the_end = date[1]
+				if not hasattr(who, 'dissolved_by'):
+					d = model.Dissolution()
+					who.dissolved_by = d
+				ts = model.TimeSpan()
+				who.dissolved_by.timespan = ts
+				ts.begin_of_the_begin = date[0]
+				ts.end_of_the_end = date[1]
 
 	gender = a.xpath('./lido:genderActor/text()', namespaces=nss)
 	if gender:
@@ -773,7 +843,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,5005) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
@@ -791,7 +861,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,5005) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1358,122 +1428,6 @@ for doc in lido:
 						pass
 				else:
 					print(f"Unknown roleuri: {role_uri}")
-
-		# place types
-		# ycba: Birth place, Death place, Place of activity, Place of visit/tour
-		# yuag: birth place, death place, location, active place, place lived, founded
-		places = event.xpath('./lido:eventPlace', namespaces=nss)
-		birthIndex = 0
-		deathIndex = 0
-		foundedIndex = 0
-		resIndex = 0
-		activityIndex = 0
-		baptismIndex = 0
-		tourIndex = 0
-
-		for pl in places:
-			pltyp = pl.xpath('./@lido:type', namespaces=nss)
-			if pltyp:
-				pltyp = pltyp[0].lower()
-			else:
-				pltyp = "default"
-			elm = pl.xpath('./lido:place', namespaces=nss)
-			display = pl.xpath('./lido:displayPlace/text()', namespaces=nss)
-			where = None
-			if elm:
-				(where, srlz) = make_place(elm[0])
-			if not where and display:
-				# make a place from the display, if we can't match name
-				# <lido:eventPlace>
-				#   <lido:displayPlace>Richmond, VA</lido:displayPlace>
-				#   <lido:place lido:geographicalEntity="place published"/>
-					# </lido:eventPlace>
-				lbl = display[0].strip()
-				pname = f"place:{lbl}"
-				if pname in NAMEDB:
-					puu = NAMEDB[pname]
-					where = model.Place(ident=urn_to_url_json(puu,"place"),label=display[0])
-				else:
-					puu = f"urn:uuid:{uuid.uuid4()}"
-					where = model.Place(ident=urn_to_url_json(puu,"place"), label=display[0])
-					where.identified_by = model.Name(value=display[0])
-					NAMEDB[pname] = puu
-					NAMEDB[puu] = pname
-
-			if not where:
-				continue
-
-			if srlz == "serialize":
-				to_serialize.append(where)
-
-			if pltyp == "default" and etyp in ["300054766", "300054686"]:
-				# location of the exhibition, publishing (etc)
-				eventobj.took_place_at = where
-
-			else:
-				# Assign the place to the corresponding Person actor
-				# XXX These might already be assigned from a previous record
-				x = -1
-				#print(f"{pltyp} -- {where._label}")
-				for a in actorObjs:
-					if a.type == "Person":
-						x += 1
-						if pltyp == "birth place" and x == birthIndex:
-							if not hasattr(a, 'born'):
-								a.born = model.Birth()
-							a.born.took_place_at = where
-							birthIndex += 1
-							break
-						elif pltyp == "death place" and x == deathIndex:
-							if not hasattr(a, 'died'):
-								a.died = model.Death()
-							a.died.took_place_at = where
-							deathIndex += 1
-							break
-						elif pltyp == "place of baptism" and x == baptismIndex:
-							baptismAct = model.Activity()
-							a.participated_in = baptismAct
-							baptismAct.took_place_at = where
-							baptismAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300069030", label="Baptism")
-							baptismIndex += 1
-							break
-							# just put all the places on all the roles of the first actor
-							# no way to know anything else
-							# e.g. 10751 has 1 actor with 2 roles, 3 places... none of which are the place for the event.
-							#if not hasattr(who, 'carried_out'):
-							#	who.carried_out = vocab.Active()
-							#for rl in who.carried_out:
-							#		rl.took_place_at = where
-							#break
-						elif pltyp == "place of activity":
-							#print(f"In place of activity {x} {activityIndex}")
-							if activityIndex == 0:
-								activityAct = model.Activity()
-								a.participated_in = activityAct
-								activityAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300393177", label="Professional Activities")
-							activityAct.took_place_at = where
-							activityIndex += 1
-							break
-						elif pltyp == "place of visit/tour":
-							#print(f"In place of activity {x} {tourIndex}")
-							if tourIndex == 0:
-								tourAct = model.Activity()
-								a.participated_in = tourAct
-								tourAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300162867", label="Journeys")
-							tourAct.took_place_at = where
-							tourIndex += 1
-							break
-						elif pltyp == "place lived" and x == resIndex:
-							a.residence = where
-							resIndex += 1
-					elif a.type == "Group":
-						if pltyp == "founded" and x == foundedIndex:
-							a.formed_by.took_place_at = where
-							foundedIndex += 1
-							break
-						elif pltyp == "location":
-							# location of the group
-							a.residence = where
 
 		# Methods for the event
 		# e.g. type of acquisition
