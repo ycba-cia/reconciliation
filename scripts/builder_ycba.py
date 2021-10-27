@@ -843,7 +843,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (82154) order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
@@ -860,8 +860,8 @@ except:
 	print("Error: unable to fetch LIDO data")
 
 if config1 == "test":
-	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
+	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (82154) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1035,9 +1035,15 @@ for doc in lido:
 	# type values:  always "inventory number"
 	fields = descMd.xpath('./lido:objectIdentificationWrap/lido:repositoryWrap/lido:repositorySet/lido:workID', namespaces=nss)
 	for f in fields:
+		typ = f.xpath('./@lido:type', namespaces=nss)[0].lower()
 		value = f.xpath('./text()')[0]
-		what.identified_by = vocab.AccessionNumber(value=value)
-		aeonCallNumber = value
+		if typ == "inventory number":
+			what.identified_by = vocab.AccessionNumber(value=value)
+			aeonCallNumber = value
+		if typ == "lux yuag object":
+			pclss = model.HumanMadeObject
+			what.equivalent = pclss(ident=value)
+
 	# repositorySet -- type is always current --> current owner
 	#      <lido:repositoryName>
 	#        <lido:legalBodyID lido:source="ULAN" lido:type="local">500303557</lido:legalBodyID>
