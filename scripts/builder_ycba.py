@@ -441,8 +441,11 @@ def make_actor(a, source=""):
 			who.equivalent = pclss(ident=val)
 		elif typ == "subjectActor":
 			if src in entity_templates:
-				url = entity_templates[src].format(ident=val)
-				who.equivalent = pclss(ident=url)
+				if val.startswith('http'):
+					who.equivalent = pclss(ident=val)
+				else:
+					url = entity_templates[src].format(ident=val)
+					who.equivalent = pclss(ident=url)
 		else:
 			print(f"no typ {typ} for actorID: {val}")
 
@@ -843,7 +846,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (82154) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (72727) order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
@@ -861,7 +864,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (82154) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (72727) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
