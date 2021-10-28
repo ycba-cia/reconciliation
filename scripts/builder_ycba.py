@@ -852,7 +852,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,9187) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (17820) order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
@@ -870,7 +870,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,9187) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (17820) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1488,7 +1488,7 @@ for doc in lido:
 			else:
 				aeonItemAuthor1 = ""
 			accessStmtURL = aeonHost + "Action=" + aeonAction + "&Form=" + aeonForm + "&Value=" + aeonValue + "&Site=" + aeonSite + "&Callnumber=" + aeonCallNumber + "&ItemTitle=" + aeonItemTitle + "&ItemAuthor=" + aeonItemAuthor1 + "&ItemDate=" + aeonItemDate + "&Format=" + aeonFormat + "&Location=" + aeonLocation + "&mfhdID=" + aeonMfhdID + "&EADNumber=" + aeonEADNumber
-			accessStmt = f'<a href="{accessStmtURL}">{aeonLabel}</a>'
+			accessStmt = f'<span class="lux_internal_data"><a href="{accessStmtURL}">{aeonLabel}</a></span>'
 		else:
 			accessStmt = onview
 		what.referred_to_by = vocab.AccessStatement(content=accessStmt)
