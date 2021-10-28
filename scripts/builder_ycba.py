@@ -846,7 +846,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (72727) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34440,72727) order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
@@ -864,7 +864,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (72727) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34440,72727) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -927,16 +927,12 @@ for doc in lido:
 			t = t[t.rfind('-')+1:]
 
 	wid = lookup_or_map(f"ycba:object/{t}")
-	wvid = lookup_or_map(f"ycba:visual/{t}")
 	#note passing AUTOURI as ident to models generates a new autouri
 	what = model.HumanMadeObject(ident=urn_to_url_json(wid,"object"))
-	whatvi = model.VisualItem(ident=urn_to_url_json(wvid,"visual"))
-	what.shows = whatvi
 	if t:
 		what.identified_by = vocab.SystemNumber(label="Local System Number", value=t)
 
 	to_serialize.append(what)
-	to_serialize.append(whatvi)
 
 	what.member_of = sets_model[set]
 
@@ -951,14 +947,31 @@ for doc in lido:
 	if len(fields) > 1:
 		print(f"Record {f} has more than one classification")
 	classns = []
+	classterm = ""
 	for f in fields:
 		typ = make_concept(f)
 		if not typ:
 			continue
 		uri = typ.id
+		classterm = f.xpath('./lido:term/text()',namespaces=nss)[0]
 		classns.append(uri)
 		what.classified_as = typ
 		typ.classified_as = vocab.instances['work type']
+
+	classtype = ""
+	if classterm == "Manuscript":
+		classtype = "text"
+		wtid = lookup_or_map(f"ycba:text/{t}")
+		whattext = model.LinguisticObject(ident=urn_to_url_json(wtid,"text"))
+		what.carries = whattext
+		to_serialize.append(whattext)
+	else:
+		classtype = "visual"
+		wvid = lookup_or_map(f"ycba:visual/{t}")
+		whatvi = model.VisualItem(ident=urn_to_url_json(wvid,"visual"))
+		what.shows = whatvi
+		to_serialize.append(whatvi)
+
 
 	# <lido:objectWorkType><lido:conceptID lido:source="AAT" lido:type="Object name">300033618</lido:conceptID>
 	# Other classifications: "Object name"; "Genre"   (that's all)
@@ -993,21 +1006,34 @@ for doc in lido:
 		what.identified_by = n
 		if not hasattr(what, '_label'):
 			what._label = value
-			whatvi._label = f'"{value}" - Visual Content'
+			if classtype == "visual":
+				whatvi._label = f'"{value}" - Visual Content'
+			if classtype == "text":
+				whattext._label = f'"{value}" - Linguistic Content'
 		if pref == "preferred":
 			n.classified_as = vocab.instances['primary']
 			# Override the first with preferred
 			what._label = value
-			whatvi._label = f'"{value}" - Visual Content'
+			if classtype == "visual":
+				whatvi._label = f'"{value}" - Visual Content'
+			if classtype == "text":
+				whattext._label = f'"{value}" - Linguistic Content'
 		if not typ in ['Repository title', 'Alternate title', 'Alternative title']:
 			# XXX Process other title types here
 			pass
 	try:
-		whatvi.identified_by = model.Name(content=whatvi._label)
+		if classtype == "visual":
+			whatvi.identified_by = model.Name(content=whatvi._label)
+		if classtype == "text":
+			whattext.identified_by = model.Name(content=whattext._label)
 	except:
 		print(f" --- {fn} does not have an appellation!")
-		whatvi.identified_by = model.Name(content="Unnamed Content")
-		whatvi._label = "Unnamed Content"
+		if classtype == "visual":
+			whatvi.identified_by = model.Name(content="Unnamed Content")
+			whatvi._label = "Unnamed Content"
+		if classtype == "text":
+			whattext.identified_by = model.Name(content="Unnamed Content")
+			whattext._label = "Unnamed Content"
 		if not hasattr(what, '_label'):
 			what._label = "Unnamed Object"
 			what.identified_by = model.Name(content="Unnamed Object")
@@ -1475,7 +1501,10 @@ for doc in lido:
 				except:
 					missing_subjects[t._label] = 1
 			else:
-				whatvi.about = t
+				if classtype == "visual":
+					whatvi.about = t
+				if classtype == "text":
+					whattext.about = t
 
 	subjs = descMd.xpath('./lido:objectRelationWrap/lido:subjectWrap/lido:subjectSet/lido:subject/lido:subjectObject', namespaces=nss)
 	for sub in subjs:
@@ -1490,7 +1519,10 @@ for doc in lido:
 				except:
 					missing_subjects[t._label] = 1
 			else:
-				whatvi.about = t
+				if classtype == "visual":
+					whatvi.about = t
+				if classtype == "text":
+					whattext.about = t
 
 	eventSubjs = descMd.xpath('./lido:objectRelationWrap/lido:subjectWrap/lido:subjectSet/lido:subject/lido:subjectEvent', namespaces=nss)
 	for es in eventSubjs:
@@ -1504,7 +1536,10 @@ for doc in lido:
 					except:
 						missing_subjects[t._label] = 1
 				else:
-					whatvi.represents_instance_of_type = t
+					if classtype == "visual":
+						whatvi.represents_instance_of_type = t
+					if classtype == "text":
+						whattext.represents_instance_of_type = t
 
 	# PROBABLY these are people, but they might be groups? No way to know
 	# PROBABLY they're depicted? Also no way to know
@@ -1516,10 +1551,16 @@ for doc in lido:
 			# concept
 			u = get_concept_uri(peep.xpath('./lido:actorID', namespaces=nss)[0])
 			t = model.Type(ident=u, label=peep.xpath('./lido:nameActorSet/lido:appellationValue/text()', namespaces=nss)[0])
-			whatvi.represents_instance_of_type = t
+			if classtype == "visual":
+				whatvi.represents_instance_of_type = t
+			if classtype == "text":
+				whattext.represents_instance_of_type = t
 		else:
 			(who, srlz) = make_actor(peep, source="subject")
-			whatvi.represents = who
+			if classtype == "visual":
+				whatvi.represents = who
+			if classtype == "text":
+				whattext.represents = who
 			if srlz == "serialize":
 				to_serialize.append(who)
 
@@ -1573,7 +1614,10 @@ for doc in lido:
 				pass
 			elif rel == "depicted":
 				# add the place as depicted in the visualitem
-				whatvi.represents = place
+				if classtype == "visual":
+					whatvi.represents = place
+				if classtype == "text":
+					whattext.represents = place
 
 
 	# Related Works
@@ -1703,7 +1747,10 @@ for doc in lido:
 		do = vocab.DigitalImage(ident=AUTO_URI)
 		do.format = "image/jpeg"
 		do.access_point = model.DigitalObject(ident=img)
-		whatvi.digitally_shown_by = do
+		if classtype == "visual":
+			whatvi.digitally_shown_by = do
+		if classtype == "text":
+			whattext.digitally_shown_by = do
 		to_serialize.append(do)
 	serialize_method(to_serialize)
 	fileidx += 1
