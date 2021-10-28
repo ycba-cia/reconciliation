@@ -556,6 +556,9 @@ def make_actor(a, source=""):
 				who.born.timespan = ts
 				ts.begin_of_the_begin = date[0]
 				ts.end_of_the_end = date[1]
+				birthDateTyp = a.xpath('./lido:vitalDatesActor/lido:earliestDate/@lido:type', namespaces=nss)[0]
+				if birthDateTyp == "estimatedDate":
+					ts.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300054617”", label="Estimated")
 			elif who.type == "Group":
 				if not hasattr(who, 'formed_by'):
 					b = model.Formation()
@@ -582,6 +585,9 @@ def make_actor(a, source=""):
 				who.died.timespan = ts
 				ts.begin_of_the_begin = date[0]
 				ts.end_of_the_end = date[1]
+				deathDateTyp = a.xpath('./lido:vitalDatesActor/lido:latestDate/@lido:type', namespaces=nss)[0]
+				if deathDateTyp == "estimatedDate":
+					ts.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300054617”", label="Estimated")
 			elif who.type == "Group":
 				if not hasattr(who, 'dissolved_by'):
 					d = model.Dissolution()
@@ -846,7 +852,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34440,72727) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,9187) order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
@@ -864,7 +870,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34440,72727) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,9187) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
