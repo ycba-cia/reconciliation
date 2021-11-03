@@ -852,7 +852,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (17820) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,22010,17820,72727,9187,34440) order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
@@ -870,7 +870,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (17820) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,22010,17820,72727,9187,34440) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -953,25 +953,25 @@ for doc in lido:
 	if len(fields) > 1:
 		print(f"Record {f} has more than one classification")
 	classns = []
-	classterm = ""
+	classterms = []
 	for f in fields:
 		typ = make_concept(f)
 		if not typ:
 			continue
 		uri = typ.id
-		classterm = f.xpath('./lido:term/text()',namespaces=nss)[0]
+		classterms.append(f.xpath('./lido:term/text()',namespaces=nss)[0])
 		classns.append(uri)
 		what.classified_as = typ
 		typ.classified_as = vocab.instances['work type']
 
 	classtype = ""
-	if classterm == "Manuscript":
+	if "Manuscript" in classterms:
 		classtype = "text"
 		wtid = lookup_or_map(f"ycba:text/{t}")
 		whattext = model.LinguisticObject(ident=urn_to_url_json(wtid,"text"))
 		what.carries = whattext
 		to_serialize.append(whattext)
-	else:
+	if "Manuscript" not in classterms or len(classterms) > 1:
 		classtype = "visual"
 		wvid = lookup_or_map(f"ycba:visual/{t}")
 		whatvi = model.VisualItem(ident=urn_to_url_json(wvid,"visual"))
@@ -983,13 +983,14 @@ for doc in lido:
 	# Other classifications: "Object name"; "Genre"   (that's all)
 	fields = descMd.xpath('./lido:objectClassificationWrap/lido:objectWorkTypeWrap/lido:objectWorkType', namespaces=nss)
 	for f in fields:
-		typ = make_concept(f)
-		if not typ:
-			continue
-		if typ.id in classns:
-			# no need to duplicate this
-			continue
-		what.classified_as = typ
+		if f.xpath('./lido:conceptID[@lido:type="Object name"]',namespaces=nss):
+			typ = make_concept(f)
+			if not typ:
+				continue
+			if typ.id in classns:
+				# no need to duplicate this
+				continue
+			what.classified_as = typ
 
 	# /lido:lido/lido:descriptiveMetadata/lido:objectIdentificationWrap/lido:titleWrap/lido:titleSet
 	# <lido:titleSet lido:type="Repository title">
