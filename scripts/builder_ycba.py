@@ -947,20 +947,34 @@ for doc in lido:
 
 	descMd = dom.xpath(f'{wrap}/lido:lido/lido:descriptiveMetadata', namespaces=nss)[0]
 
+	# <lido:objectWorkType><lido:conceptID lido:source="AAT" lido:type="Object name">300033618</lido:conceptID>
+	# Other classifications: "Object name"; "Genre"   (that's all)
+	fields = descMd.xpath('./lido:objectClassificationWrap/lido:objectWorkTypeWrap/lido:objectWorkType', namespaces=nss)
+	classns = []
+	for f in fields:
+		if f.xpath('./lido:conceptID[@lido:type="Object name"]',namespaces=nss):
+			typ = make_concept(f)
+			if not typ:
+				continue
+			uri = typ.id
+			classns.append(uri)
+			what.classified_as = typ
+			typ.classified_as = vocab.instances['work type']
+
 	# <lido:classification><lido:conceptID lido:source="AAT" lido:type="Classification">300033618</lido:conceptID>
 	# This is the object type, so process first. Only "Classification" as a type value
 	fields = descMd.xpath('./lido:objectClassificationWrap/lido:classificationWrap/lido:classification', namespaces=nss)
 	if len(fields) > 1:
 		print(f"Record {f} has more than one classification")
-	classns = []
 	classterms = []
 	for f in fields:
 		typ = make_concept(f)
 		if not typ:
 			continue
-		uri = typ.id
+		if typ.id in classns:
+			# no need to duplicate this
+			continue
 		classterms.append(f.xpath('./lido:term/text()',namespaces=nss)[0])
-		classns.append(uri)
 		what.classified_as = typ
 		typ.classified_as = vocab.instances['work type']
 
@@ -977,20 +991,6 @@ for doc in lido:
 		whatvi = model.VisualItem(ident=urn_to_url_json(wvid,"visual"))
 		what.shows = whatvi
 		to_serialize.append(whatvi)
-
-
-	# <lido:objectWorkType><lido:conceptID lido:source="AAT" lido:type="Object name">300033618</lido:conceptID>
-	# Other classifications: "Object name"; "Genre"   (that's all)
-	fields = descMd.xpath('./lido:objectClassificationWrap/lido:objectWorkTypeWrap/lido:objectWorkType', namespaces=nss)
-	for f in fields:
-		if f.xpath('./lido:conceptID[@lido:type="Object name"]',namespaces=nss):
-			typ = make_concept(f)
-			if not typ:
-				continue
-			if typ.id in classns:
-				# no need to duplicate this
-				continue
-			what.classified_as = typ
 
 	# /lido:lido/lido:descriptiveMetadata/lido:objectIdentificationWrap/lido:titleWrap/lido:titleSet
 	# <lido:titleSet lido:type="Repository title">
