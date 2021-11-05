@@ -852,7 +852,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,22010,17820,72727,9187,34440) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (45938) order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
@@ -870,7 +870,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,22010,17820,72727,9187,34440) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (45938) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -974,6 +974,7 @@ for doc in lido:
 		if typ.id in classns:
 			# no need to duplicate this
 			continue
+		classns.append(typ.id)
 		classterms.append(f.xpath('./lido:term/text()',namespaces=nss)[0])
 		what.classified_as = typ
 		typ.classified_as = vocab.instances['work type']
@@ -991,6 +992,9 @@ for doc in lido:
 		whatvi = model.VisualItem(ident=urn_to_url_json(wvid,"visual"))
 		what.shows = whatvi
 		to_serialize.append(whatvi)
+
+	#placeholder for future implementation
+	#add_supertype(classns)
 
 	# /lido:lido/lido:descriptiveMetadata/lido:objectIdentificationWrap/lido:titleWrap/lido:titleSet
 	# <lido:titleSet lido:type="Repository title">
