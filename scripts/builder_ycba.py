@@ -466,10 +466,27 @@ def make_actor(a, source=""):
 					who._label = val
 	nationalityConcepts = a.xpath('./lido:nationalityActor/lido:conceptID', namespaces=nss)
 	for nc in nationalityConcepts:
-		src = nc.xpath('./@lido:source', namespaces=nss)[0]
-		typ = nc.xpath('./@lido:type', namespaces=nss)[0]
-		label = nc.xpath('./@lido:label', namespaces=nss)[0]
-		txt = nc.xpath('./text()', namespaces=nss)[0]
+		src = nc.xpath('./@lido:source', namespaces=nss)
+		typ = nc.xpath('./@lido:type', namespaces=nss)
+		label = nc.xpath('./@lido:label', namespaces=nss)
+		txt = nc.xpath('./text()', namespaces=nss)
+		if len(src) == 0:
+			continue
+		else:
+			src = src[0]
+		if len(typ) == 0:
+			continue
+		else:
+			typ = typ[0]
+		if len(label) == 0:
+			continue
+		else:
+			label = label[0]
+		if len(txt) == 0:
+			continue
+		else:
+			txt = txt[0]
+
 		#print(f"{src}|{typ}|{label}|{txt}")
 		pname = f"place:{label}"
 		if pname in NAMEDB:
