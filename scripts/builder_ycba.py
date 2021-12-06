@@ -212,6 +212,7 @@ def get_concept_uri(f, clss=None, map_to_uuid=False):
 		t = f"{clss}/{t}"
 
 	# Now check if we're mapped, if so, return the UUID
+	# ERJ 12/4 is the below right? sometimes returning uri, something returning uri
 	if not map_to_uuid and vocab in entity_templates:
 		return entity_templates[vocab].format(ident=t)
 	elif vocab in entity_templates:
@@ -489,6 +490,9 @@ def make_actor(a, source=""):
 
 		#print(f"{src}|{typ}|{label}|{txt}")
 		pname = f"place:{label}"
+		#TODO - implement map_uuid 1st, NAMEDB second, text, dilligence to all UUID lookups for places
+		#puu = map_uuid(f"{src}",f"{txt}")
+		#(place, srlz) = make_place(p)
 		if pname in NAMEDB:
 			puu = NAMEDB[pname]
 			where = model.Place(ident=urn_to_url_json(puu, "place"), label=label)
@@ -869,7 +873,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (45938) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (38526) order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
@@ -887,7 +891,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (45938) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (38526) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -968,6 +972,7 @@ for doc in lido:
 	# Other classifications: "Object name"; "Genre"   (that's all)
 	fields = descMd.xpath('./lido:objectClassificationWrap/lido:objectWorkTypeWrap/lido:objectWorkType', namespaces=nss)
 	classns = []
+	genres = []
 	for f in fields:
 		if f.xpath('./lido:conceptID[@lido:type="Object name"]',namespaces=nss):
 			typ = make_concept(f)
@@ -976,6 +981,12 @@ for doc in lido:
 			uri = typ.id
 			classns.append(uri)
 			what.classified_as = typ
+			typ.classified_as = vocab.instances['work type']
+		if f.xpath('./lido:conceptID[@lido:type="Genre"]',namespaces=nss):
+			typ = make_concept(f)
+			if not typ:
+				continue
+			genres.append(typ)
 			typ.classified_as = vocab.instances['work type']
 
 	# <lido:classification><lido:conceptID lido:source="AAT" lido:type="Classification">300033618</lido:conceptID>
@@ -1002,12 +1013,16 @@ for doc in lido:
 		wtid = lookup_or_map(f"ycba:text/{t}")
 		whattext = model.LinguisticObject(ident=urn_to_url_json(wtid,"text"))
 		what.carries = whattext
+		for genre in genres:
+			whatvi.classified_as = genre
 		to_serialize.append(whattext)
 	if "Manuscript" not in classterms or len(classterms) > 1:
 		classtype = "visual"
 		wvid = lookup_or_map(f"ycba:visual/{t}")
 		whatvi = model.VisualItem(ident=urn_to_url_json(wvid,"visual"))
 		what.shows = whatvi
+		for genre in genres:
+			whatvi.classified_as = genre
 		to_serialize.append(whatvi)
 
 	#placeholder for future implementation
