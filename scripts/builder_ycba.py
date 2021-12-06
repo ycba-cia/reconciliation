@@ -488,61 +488,60 @@ def make_actor(a, source=""):
 		else:
 			txt = txt[0]
 
-		#print(f"{src}|{typ}|{label}|{txt}")
-		pname = f"place:{label}"
-		#TODO - implement map_uuid 1st, NAMEDB second, text, dilligence to all UUID lookups for places
-		#puu = map_uuid(f"{src}",f"{txt}")
-		#(place, srlz) = make_place(p)
-		if pname in NAMEDB:
-			puu = NAMEDB[pname]
-			where = model.Place(ident=urn_to_url_json(puu, "place"), label=label)
-			where.identified_by = model.Name(value=label) #is this right?
-			if src == "TGN":
+		#get TGN conceptIDs in nationality Actor to get places related to actor (birth place, death place, place of activity)
+		if src == "TGN":
+			src = src.lower()
+			uu = DB[f"{src}:{txt}"]
+			if uu:
+				outdir = os.path.join(model.factory.base_dir, "place", uu[uu.rfind(':')+1:uu.rfind(':')+3])
+				pathlib.Path(outdir).mkdir(parents=True, exist_ok=True)
+				outfn = os.path.join(outdir, uu[uu.rfind(':')+1:] + ".json")
+				if not path.exists(outfn):
+					print(f"Error: {outfn} does't exist on disk")
+					continue
+				where = model.Place(ident=urn_to_url_json(uu, "place"), label=label)
+			else:
+				uu = f"urn:uuid:{uuid.uuid4()}"
+				DB[uu] = {src: txt}
+				DB[f"{src}:{txt}"] = uu
+				DB.commit()
+				where = model.Place(ident=urn_to_url_json(uu, "place"), label=label)
 				where.equivalent = model.Place(ident=f"http://vocab.getty.edu/tgn/{txt}")
-		else:
-			puu = f"urn:uuid:{uuid.uuid4()}"
-			where = model.Place(ident=urn_to_url_json(puu, "place"), label=label)
-			where.identified_by = model.Name(value=label)
-			if src == "TGN":
-				where.equivalent = model.Place(ident=f"http://vocab.getty.edu/tgn/{txt}")
-			NAMEDB[pname] = puu
-			NAMEDB[puu] = pname
+				to_serialize.append(where)
 
-		to_serialize.append(where)
-
-		pltyp = typ.lower()
-		if who.type == "Person":
-			if pltyp == "birth place":
-				if not hasattr(who, 'born'):
-					who.born = model.Birth()
-				who.born.took_place_at = where
-			elif pltyp == "death place":
-				if not hasattr(who, 'died'):
-					who.died = model.Death()
-				who.died.took_place_at = where
-			elif pltyp == "place of baptism":
-				baptismAct = model.Activity()
-				who.participated_in = baptismAct
-				baptismAct.took_place_at = where
-				baptismAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300069030", label="Baptism")
-			elif pltyp == "place of activity":
-				activityAct = model.Activity()
-				who.participated_in = activityAct
-				activityAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300393177",
-														   label="Professional Activities")
-				activityAct.took_place_at = where
-			elif pltyp == "place of visit/tour":
-				tourAct = model.Activity()
-				who.participated_in = tourAct
-				tourAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300162867", label="Journeys")
-				tourAct.took_place_at = where
-			elif pltyp == "place lived":
-				who.residence = where
-		elif who.type == "Group":
-			if pltyp == "founded":
-				who.formed_by.took_place_at = where
-			elif pltyp == "location":
-				who.residence = where
+			pltyp = typ.lower()
+			if who.type == "Person":
+				if pltyp == "birth place":
+					if not hasattr(who, 'born'):
+						who.born = model.Birth()
+					who.born.took_place_at = where
+				elif pltyp == "death place":
+					if not hasattr(who, 'died'):
+						who.died = model.Death()
+					who.died.took_place_at = where
+				elif pltyp == "place of baptism":
+					baptismAct = model.Activity()
+					who.participated_in = baptismAct
+					baptismAct.took_place_at = where
+					baptismAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300069030", label="Baptism")
+				elif pltyp == "place of activity":
+					activityAct = model.Activity()
+					who.participated_in = activityAct
+					activityAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300393177",
+															   label="Professional Activities")
+					activityAct.took_place_at = where
+				elif pltyp == "place of visit/tour":
+					tourAct = model.Activity()
+					who.participated_in = tourAct
+					tourAct.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300162867", label="Journeys")
+					tourAct.took_place_at = where
+				elif pltyp == "place lived":
+					who.residence = where
+			elif who.type == "Group":
+				if pltyp == "founded":
+					who.formed_by.took_place_at = where
+				elif pltyp == "location":
+					who.residence = where
 
 	nationality = a.xpath('./lido:nationalityActor/lido:term/text()', namespaces=nss)
 	# No ConceptIDs for nationality
