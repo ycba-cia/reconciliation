@@ -872,7 +872,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (38526) order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (22010) order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record order by cast(local_identifier as signed) asc"
@@ -890,7 +890,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (38526) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (22010) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1544,9 +1544,9 @@ for doc in lido:
 					missing_subjects[t._label] = 1
 			else:
 				if classtype == "visual":
-					whatvi.about = t
+					whatvi.represents = t
 				if classtype == "text":
-					whattext.about = t
+					whattext.represents = t
 
 	subjs = descMd.xpath('./lido:objectRelationWrap/lido:subjectWrap/lido:subjectSet/lido:subject/lido:subjectObject', namespaces=nss)
 	for sub in subjs:
@@ -1562,9 +1562,9 @@ for doc in lido:
 					missing_subjects[t._label] = 1
 			else:
 				if classtype == "visual":
-					whatvi.about = t
+					whatvi.represents = t
 				if classtype == "text":
-					whattext.about = t
+					whattext.represents = t
 
 	eventSubjs = descMd.xpath('./lido:objectRelationWrap/lido:subjectWrap/lido:subjectSet/lido:subject/lido:subjectEvent', namespaces=nss)
 	for es in eventSubjs:
@@ -1579,9 +1579,9 @@ for doc in lido:
 						missing_subjects[t._label] = 1
 				else:
 					if classtype == "visual":
-						whatvi.represents_instance_of_type = t
+						whatvi.about = t
 					if classtype == "text":
-						whattext.represents_instance_of_type = t
+						whattext.about = t
 
 	# PROBABLY these are people, but they might be groups? No way to know
 	# PROBABLY they're depicted? Also no way to know
@@ -1594,15 +1594,15 @@ for doc in lido:
 			u = get_concept_uri(peep.xpath('./lido:actorID', namespaces=nss)[0])
 			t = model.Type(ident=u, label=peep.xpath('./lido:nameActorSet/lido:appellationValue/text()', namespaces=nss)[0])
 			if classtype == "visual":
-				whatvi.represents_instance_of_type = t
+				whatvi.about = t
 			if classtype == "text":
-				whattext.represents_instance_of_type = t
+				whattext.about = t
 		else:
 			(who, srlz) = make_actor(peep, source="subject")
 			if classtype == "visual":
-				whatvi.represents = who
+				whatvi.about = who
 			if classtype == "text":
-				whattext.represents = who
+				whattext.about = who
 			if srlz == "serialize":
 				to_serialize.append(who)
 
