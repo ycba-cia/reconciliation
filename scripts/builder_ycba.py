@@ -1820,27 +1820,25 @@ for doc in lido:
 		if typ in ['thumb', 'medium', 'large', 'original']:
 			images[typ] = uri			
 		elif typ == "http://iiif.io/api/presentation/2/context.json":
-			iiif_uu = lookup_or_map(f'ycba:digobj/pres2-{uri.split("/")[-1]}')
 			val = f"IIIF v2 manifest for \"{what._label}\""
-			do = model.DigitalObject(ident=urn_to_url_json(iiif_uu,"digital"),label =val)
-
+			do = model.DigitalObject(label=val)
 			do.conforms_to = model.InformationObject(ident="http://iiif.io/api/presentation/2/context.json")
 			do.format = "application/ld+json"
 			do.access_point = model.DigitalObject(ident=uri)
 			do.identified_by = model.Name(value=val)
-			what.subject_of = do
-			to_serialize.append(do)
+			lo = model.LinguisticObject(label=val)
+			lo.digitally_carried_by = do
+			what.subject_of = lo
 		elif typ == "http://iiif.io/api/presentation/3/context.json":
-			iiif_uu = lookup_or_map(f'ycba:digobj/pres3-{uri.split("/")[-1]}')
 			val = f"IIIF v3 manifest for \"{what._label}\""
-			do = model.DigitalObject(ident=urn_to_url_json(iiif_uu,"digital"),label =val)
-
+			do = model.DigitalObject(label=val)
 			do.conforms_to = model.InformationObject(ident="http://iiif.io/api/presentation/3/context.json")
 			do.format = "application/ld+json"
 			do.access_point = model.DigitalObject(ident=uri)
 			do.identified_by = model.Name(value=val)
-			what.subject_of = do
-			to_serialize.append(do)
+			lo = model.LinguisticObject(label=val)
+			lo.digitally_carried_by = do
+			what.subject_of = lo
 
 	img = images.get('large', images.get('medium', images.get('thumb', None)))
 	if img:
