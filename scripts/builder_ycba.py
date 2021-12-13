@@ -38,8 +38,64 @@ else:
 	config2 = "do_site_everytime"
 print(config1)
 
+def _add_linked_art_boundary_check():
+
+	boundary_classes = [x.__name__ for x in [vocab.Actor, vocab.HumanMadeObject, vocab.Person, vocab.Group, vocab.VisualItem, \
+		vocab.Place, vocab.Period, vocab.LinguisticObject, vocab.Phase, vocab.Set, vocab.Event, vocab.DigitalObject, vocab.DigitalService]]
+	data_embed_classes = [vocab.Name, vocab.Identifier, vocab.Dimension, vocab.TimeSpan, vocab.MonetaryAmount]
+	type_embed_classes = [vocab.Type, vocab.Currency, vocab.Language, vocab.Material, vocab.MeasurementUnit]
+	event_embed_classes = [vocab.Birth, vocab.Creation, vocab.Production, vocab.Formation, vocab.Payment, \
+							vocab.Death, vocab.Destruction, vocab.Dissolution ]
+	all_embed_classes = []
+	all_embed_classes.extend(data_embed_classes)
+	all_embed_classes.extend(type_embed_classes)
+	all_embed_classes.extend(event_embed_classes)
+	embed_classes = [x.__name__ for x in all_embed_classes]
+
+	# Activity, AttributeAssignment, InformationObject, TransferOfCustody, Move
+	# Propositional Object
+
+	vocab.ExternalResource._embed_override = None
+
+	def my_linked_art_boundary_check(self, top, rel, value):
+		# True = Embed ; False = Split
+		if value._embed_override is not None:
+			return value._embed_override
+		elif isinstance(value, vocab.LinguisticObject) and hasattr(value, 'classified_as'):
+			for ca in value.classified_as:
+				if instances['brief text'] in getattr(ca, 'classified_as', []):
+					return True
+		# Non Statement Linguistic objects might still be internal or external
+		# so apply logic from relating properties, not return False
+		elif isinstance(value, vocab.ProvenanceEntry):
+			return False
+		elif isinstance(value, vocab.DigitalObject) and rel in ["digitally_carried_by"]:
+			return True
+		elif isinstance(value, vocab.LinguisticObject) and rel in ["subject_of"]:
+			return True
+
+		if rel in ["part", "member"]:
+			# Downwards, internal simple partitioning
+			# This catches an internal part to a LinguisticObject
+			return True
+		elif rel in ["part_of", 'member_of']:
+			# upwards partition refs are inclusion, and always boundary crossing
+			return False
+		elif value.type in boundary_classes:
+			# This catches the external text LinguisticObject
+			return False
+		elif value.type in embed_classes:
+			return True
+		else:
+			# Default to embedding to avoid data loss
+			return True
+
+	setattr(vocab.BaseResource, "_linked_art_boundary_okay", my_linked_art_boundary_check)
+	factory.linked_art_boundaries = True
+
 # Default to blank nodes and override as needed
 model.factory.auto_assign_id = False
+vocab.add_linked_art_boundary_check = _add_linked_art_boundary_check
 vocab.add_linked_art_boundary_check()
 vocab.set_linked_art_uri_segments()
 model.factory.base_url = entity_templates[inst_prefix].replace("{ident}", "")
@@ -1155,13 +1211,13 @@ for doc in lido:
 
 		hp = descMd.xpath('./lido:objectIdentificationWrap/lido:repositoryWrap/lido:repositorySet/lido:repositoryName/lido:legalBodyWeblink/text()', namespaces=nss)
 		if hp:
-			hp_uu = lookup_or_map(f"ycba:digobj/ycbahome")
-			do = vocab.WebPage(ident=urn_to_url_json(hp_uu,"digital"), label=f"Home page for {lbl}")
+			do = vocab.WebPage(label=f"Online home page for {lbl}")
 			do.identified_by = model.Name(content=do._label)
 			do.format="text/html"
 			do.access_point= model.DigitalObject(ident=hp[0])
-			to_serialize.append(do)
-			owner.subject_of = do
+			lo = model.LinguisticObject(label=f"Home page for {lbl}")
+			lo.digitally_carried_by = do
+			owner.subject_of = lo
 		to_serialize.append(owner)
 		to_serialize.append(siteplace)
 
@@ -1737,17 +1793,19 @@ for doc in lido:
     # recordWrap -- homepage
 	homepage = adminMd.xpath('./lido:recordWrap/lido:recordInfoSet/lido:recordInfoLink[./@lido:formatResource="html"]/text()', namespaces=nss)
 	if homepage:
-		hp_id = homepage[0].strip().split("/")[-1].replace(":","-")
-		hp_uu = lookup_or_map(f"ycba:digobj/{hp_id}")
 		try:
-			hp = vocab.WebPage(ident=urn_to_url_json(hp_uu,"digital"), label=f"Homepage for \"{what._label}\"")
+			hp = vocab.WebPage(label=f"Online home page for \"{what._label}\"")
 		except:
-			hp = vocab.WebPage(ident=urn_to_url_json(hp_uu,"digital"), label=f"Homepage for object")
+			hp = vocab.WebPage(label=f"Online home page for object")
 		hp.identified_by = vocab.PrimaryName(content=hp._label)
 		hp.format = "text/html"
 		hp.access_point = model.DigitalObject(ident=homepage[0].strip())
-		what.subject_of = hp
-		to_serialize.append(hp)
+		try:
+			lo = model.LinguisticObject(label=f"Home page for \"{what._label}\"")
+		except:
+			lo = model.LinguisticObject(label=f"Home page for object")
+		lo.digitally_carried_by = hp
+		what.subject_of = lo
 
 	# resourceWrap -- pull in images, seeAlso to lido, iiif manifest
 	resources = adminMd.xpath('./lido:resourceWrap/lido:resourceSet/lido:resourceRepresentation', namespaces=nss)
