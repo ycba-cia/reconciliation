@@ -928,7 +928,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (45938) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (82154,6113) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -946,7 +946,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (45938) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (82154,6113) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1368,7 +1368,8 @@ for doc in lido:
 			# Exhibitions not as good as main object
 			actor_source = "life"
 
-			eid = event.xpath('./lido:eventID/text()', namespaces=nss)
+			eid = event.xpath('./lido:eventID[@lido:type="local"]/text()', namespaces=nss)
+			equiv_eid = event.xpath('./lido:eventID[@lido:type="LUX YUAG exhibition"]/text()', namespaces=nss)
 			edate = event.xpath('./lido:eventDate/lido:date/lido:earliestDate/text()', namespaces=nss)
 
 			if stmt:
@@ -1393,7 +1394,10 @@ for doc in lido:
 				#does this ever happen?
 				eventobj = vocab.Exhibition(ident=AUTO_URI,label=exhlabel)
 				# no id to match against :(
-
+			if equiv_eid:
+				equiv_act = model.Activity
+				equiv_act_id = equiv_eid[0].replace("\n","")
+				eventobj.equivalent = equiv_act(ident=equiv_act_id)
 		elif etyp == "300157782":
 			# acquisition, make a prov entry - but only one of prov per object in YCBA
 			# No need to look these up as won't be referred to elsewhere
