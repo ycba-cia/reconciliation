@@ -928,7 +928,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (82154,6113) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023,425) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -946,7 +946,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (82154,6113) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1565,7 +1565,8 @@ for doc in lido:
 						pass
 				else:
 					print(f"Unknown roleuri: {role_uri}")
-
+			if etyp == "300054766" or etyp == "300157782":  # exhibition or acquisition
+				eventobj.carried_out_by = who
 		# Methods for the event
 		# e.g. type of acquisition
 		meths = event.xpath('./lido:eventMethod', namespaces=nss)
@@ -1575,7 +1576,18 @@ for doc in lido:
 				# print(f"assigning: {t._label}")
 				eventobj.classified_as = t
 			# XXX this should maybe be `technique` rather than `classified_as`
-
+ 		#places
+		places = event.xpath('./lido:eventPlace', namespaces=nss)
+		for place in places:
+			pl = place.xpath('./lido:place', namespaces=nss)
+			for p in pl:
+				(place, srlz) = make_place(p)
+				if not place:
+					continue
+				if srlz == "serialize":
+					to_serialize.append(place)
+				if etyp == "300054766" :  # exhibition
+					eventobj.took_place_at = place
 	onview = descMd.xpath(f'{pop}/lido:namePlaceSet/lido:appellationValue[@lido:label="On view or not"]/text()', namespaces=nss)[0]
 	if onview:
 		if onview == "Not on view" and aeonSet == "ycba:pd":
