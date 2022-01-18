@@ -928,7 +928,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,107,5005,38526,17820,22010,22023,425) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (107) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -946,7 +946,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (107) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1398,6 +1398,15 @@ for doc in lido:
 				equiv_act = model.Activity
 				equiv_act_id = equiv_eid[0].replace("\n","")
 				eventobj.equivalent = equiv_act(ident=equiv_act_id)
+			k = f"exhibitset-{exid}"
+			v = f"Exhibit set for \"{eventobj._label}\""
+			setuu = map_uuid("ycba", f"set/{k}")
+			setobj = vocab.Set(ident=urn_to_url_json(setuu, "set"))
+			setobj.identified_by = model.Identifier(value=k)
+			#setobj.identified_by = model.Name(value=v)
+			setobj._label = v
+			eventobj.used_specific_object = setobj
+			what.member_of = setobj
 		elif etyp == "300157782":
 			# acquisition, make a prov entry - but only one of prov per object in YCBA
 			# No need to look these up as won't be referred to elsewhere
