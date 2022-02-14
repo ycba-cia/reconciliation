@@ -1022,7 +1022,13 @@ for doc in lido:
 	#note passing AUTOURI as ident to models generates a new autouri
 	what = model.HumanMadeObject(ident=urn_to_url_json(wid,"object"))
 	if t:
-		what.identified_by = vocab.SystemNumber(label="Local System Number", value=t)
+		ycbagroupuu = map_uuid("ycba", "actor/ycba_actor_1281")  # Yale Center for British Art by TMS con ID
+		ycbagroup = model.Group(ident=urn_to_url_json(ycbagroupuu, "group"), label="Yale Center for British Art")
+		att_ass = model.AttributeAssignment()
+		att_ass.carried_out_by = ycbagroup
+		sysnum = vocab.SystemNumber(label="Local System Number", value=t)
+		sysnum.assigned_by = att_ass
+		what.identified_by = sysnum
 
 	to_serialize.append(what)
 
@@ -1175,7 +1181,13 @@ for doc in lido:
 		typ = f.xpath('./@lido:type', namespaces=nss)[0].lower()
 		value = f.xpath('./text()')[0]
 		if typ == "inventory number":
-			what.identified_by = vocab.AccessionNumber(value=value)
+			ycbagroupuu = map_uuid("ycba", "actor/ycba_actor_1281")  # Yale Center for British Art by TMS con ID
+			ycbagroup = model.Group(ident=urn_to_url_json(ycbagroupuu, "group"), label="Yale Center for British Art")
+			att_ass = model.AttributeAssignment()
+			att_ass.carried_out_by = ycbagroup
+			accnum = vocab.AccessionNumber(value=value)
+			accnum.assigned_by = att_ass
+			what.identified_by = accnum
 			aeonCallNumber = value
 		if typ == "lux yuag object":
 			pclss = model.HumanMadeObject
