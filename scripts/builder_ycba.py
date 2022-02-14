@@ -350,6 +350,8 @@ def make_actor(a, source=""):
 		if not aid.text:
 			continue
 		val = aid.text.strip()
+		if val == "ycba_actor_1281":
+			return (None,None)
 		src = aid.attrib.get('{%s}source' % nss['lido'], None)
 		if src:
 			src = src.lower()
@@ -1215,6 +1217,7 @@ for doc in lido:
 		lbl = ''
 
 	owner = map_uuid('ulan', bid)
+	owner = map_uuid('ycba', 'actor/ycba_actor_1281') #hardcode YCBA based on TMS CON ID 1281
 	done_owner = file_exists("group", owner)
 
 	# We need siteplace for the concat location tree
@@ -1230,6 +1233,26 @@ for doc in lido:
 		owner.identified_by = model.Name(value=lbl)
 		owner.residence = siteplace
 		actor_id_source[owner.id] = "pub"
+
+		ycbagroupuu = map_uuid("ycba", "actor/ycba_actor_1281")  # Yale Center for British Art by TMS con ID
+		ycbagroup = model.Group(ident=urn_to_url_json(ycbagroupuu, "group"), label="Yale Center for British Art")
+		att_ass = model.AttributeAssignment()
+		att_ass.carried_out_by = ycbagroup
+		sysnum = vocab.SystemNumber(value="ycba_actor_1281")
+		sysnum.assigned_by = att_ass
+		owner.identified_by = sysnum
+
+		#hardcode Formation for YCBA:
+		#results in error AttributeError: 'Group' object has no attribute 'formed_by'
+		#ts = model.TimeSpan()
+		#owner.formed_by.timespan = ts
+		#ts.begin_of_the_begin = "1977-01-01T00:00:00Z"
+		#ts.end_of_the_end = "1978-01-01T00:00:00Z"
+
+		#hardcode alt names for YCBA:
+		owner.identified_by = model.Name(value="BAC")
+		owner.identified_by = model.Name(value="YCBA")
+		owner.identified_by = model.Name(value="British Art Center")
 
 		hp = descMd.xpath('./lido:objectIdentificationWrap/lido:repositoryWrap/lido:repositorySet/lido:repositoryName/lido:legalBodyWeblink/text()', namespaces=nss)
 		if hp:
