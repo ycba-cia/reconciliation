@@ -552,10 +552,13 @@ def make_actor(a, source=""):
 				outdir = os.path.join(model.factory.base_dir, "place", uu[uu.rfind(':')+1:uu.rfind(':')+3])
 				pathlib.Path(outdir).mkdir(parents=True, exist_ok=True)
 				outfn = os.path.join(outdir, uu[uu.rfind(':')+1:] + ".json")
-				if not path.exists(outfn):
-					print(f"Error: {outfn} does't exist on disk")
-					continue
 				where = model.Place(ident=urn_to_url_json(uu, "place"), label=label)
+				where.equivalent = model.Place(ident=f"http://vocab.getty.edu/tgn/{txt}")
+				if not path.exists(outfn):
+					print(f"Warning: {outfn} does't exist on disk, need to serialize")
+					to_serialize.append(where)
+					#continue
+				#where = model.Place(ident=urn_to_url_json(uu, "place"), label=label)
 			else:
 				uu = f"urn:uuid:{uuid.uuid4()}"
 				DB[uu] = {src: txt}
@@ -928,7 +931,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (107) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -946,7 +949,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (107) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1386,7 +1389,13 @@ for doc in lido:
 			if exid:
 				euu = map_uuid("ycba", f"exhibition/{exid}")
 				eventobj = vocab.Exhibition(ident=urn_to_url_json(euu,"activity"),label=exhlabel)
-				eventobj.identified_by = vocab.SystemNumber(value=exid)
+				ycbagroupuu = map_uuid("ycba", "actor/ycba_actor_1281") #Yale Center for British Art by TMS con ID
+				ycbagroup = model.Group(ident=urn_to_url_json(ycbagroupuu, "group"),label="Yale Center for British Art")
+				att_ass = model.AttributeAssignment()
+				att_ass.carried_out_by = ycbagroup
+				sysnum = vocab.SystemNumber(value=exid)
+				sysnum.assigned_by = att_ass
+				eventobj.identified_by = sysnum
 				to_serialize.append(eventobj)
 			# XXX Check if this is a second date for the same eventID
 			# if so make a parent exhibition
