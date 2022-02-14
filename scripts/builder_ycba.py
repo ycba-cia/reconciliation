@@ -493,7 +493,14 @@ def make_actor(a, source=""):
 	for (typ, src, val) in idents:
 		if typ == 'local':
 			local = model.factory.base_url + 'actor/' + val
-			who.identified_by = vocab.SystemNumber(value=val)
+			ycbagroupuu = map_uuid("ycba", "actor/ycba_actor_1281")  # Yale Center for British Art by TMS con ID
+			ycbagroup = model.Group(ident=urn_to_url_json(ycbagroupuu, "group"), label="Yale Center for British Art")
+			att_ass = model.AttributeAssignment()
+			att_ass.carried_out_by = ycbagroup
+			sysnum = vocab.SystemNumber(value=val)
+			sysnum.assigned_by = att_ass
+			who.identified_by = sysnum
+			#who.identified_by = vocab.SystemNumber(value=val)
 		elif typ == 'url':
 			who.equivalent = pclss(ident=val)
 		elif typ == "subjectActor":
