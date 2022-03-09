@@ -643,7 +643,7 @@ def make_actor(a, source=""):
 				ts = model.TimeSpan()
 				who.born.timespan = ts
 				ts.begin_of_the_begin = date[0]
-				ts.end_of_the_end = date[1]
+				ts.end_of_the_end = date_time_minus_one_second(date[1])
 				birthDateTyp = a.xpath('./lido:vitalDatesActor/lido:earliestDate/@lido:type', namespaces=nss)[0]
 				if birthDateTyp == "estimatedDate":
 					ts.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300054617”", label="Estimated")
@@ -654,7 +654,7 @@ def make_actor(a, source=""):
 				ts = model.TimeSpan()
 				who.formed_by.timespan = ts
 				ts.begin_of_the_begin = date[0]
-				ts.end_of_the_end = date[1]
+				ts.end_of_the_end = date_time_minus_one_second(date[1])
 
 	deathDate = a.xpath('./lido:vitalDatesActor/lido:latestDate/text()', namespaces=nss)
 	if deathDate:
@@ -672,7 +672,7 @@ def make_actor(a, source=""):
 				ts = model.TimeSpan()
 				who.died.timespan = ts
 				ts.begin_of_the_begin = date[0]
-				ts.end_of_the_end = date[1]
+				ts.end_of_the_end = date_time_minus_one_second(date[1])
 				deathDateTyp = a.xpath('./lido:vitalDatesActor/lido:latestDate/@lido:type', namespaces=nss)[0]
 				if deathDateTyp == "estimatedDate":
 					ts.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300054617”", label="Estimated")
@@ -683,7 +683,7 @@ def make_actor(a, source=""):
 				ts = model.TimeSpan()
 				who.dissolved_by.timespan = ts
 				ts.begin_of_the_begin = date[0]
-				ts.end_of_the_end = date[1]
+				ts.end_of_the_end = date_time_minus_one_second(date[1])
 
 	gender = a.xpath('./lido:genderActor/text()', namespaces=nss)
 	if gender:
@@ -879,6 +879,13 @@ def urn_to_url_json(s1,typ1):
 	s4 = s4 + typ1 + "/" + s3 + "/" + s2 + ".json"
 	return s4
 
+def date_time_minus_one_second(s):
+	t = datetime.datetime.strptime(s,'%Y-%m-%dT%H:%M:%SZ')
+	t2 = t - datetime.timedelta(seconds=1)
+	s2 = t2.strftime('%Y-%m-%dT%H:%M:%SZ')
+	return s2
+
+
 sets = {
 	"ycba:ps": "Yale Center for British Art (YCBA): Paintings and Sculpture",
 	"ycba:pd": "Yale Center for British Art (YCBA): Prints and Drawings",
@@ -940,7 +947,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,82154) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -958,7 +965,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,82154) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1517,7 +1524,7 @@ for doc in lido:
 					dt = None
 				if dt:
 					ts.begin_of_the_end = dt[0]
-					ts.end_of_the_end = dt[1]
+					ts.end_of_the_end = date_time_minus_one_second(dt[1])
 			if not hasattr(eventobj, 'timespan'):
 				eventobj.timespan = ts
 
