@@ -1461,10 +1461,11 @@ for doc in lido:
 			setuu = map_uuid("ycba", f"set/{k}")
 			setobj = vocab.Set(ident=urn_to_url_json(setuu, "set"))
 			setobj.identified_by = model.Identifier(value=k)
-			#setobj.identified_by = model.Name(value=v)
+			setobj.identified_by = model.Name(value=v)
 			setobj._label = v
 			eventobj.used_specific_object = setobj
 			what.member_of = setobj
+			to_serialize.append(setobj)
 		elif etyp == "300157782":
 			# acquisition, make a prov entry - but only one of prov per object in YCBA
 			# No need to look these up as won't be referred to elsewhere
