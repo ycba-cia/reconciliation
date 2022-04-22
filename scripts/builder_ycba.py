@@ -73,6 +73,10 @@ def _add_linked_art_boundary_check():
 			return True
 		elif isinstance(value, vocab.LinguisticObject) and rel in ["subject_of"]:
 			return True
+		elif isinstance(value, vocab.DigitalObject) and rel in ["digitally_shown_by"]:
+			return True
+		elif isinstance(value, vocab.VisualItem) and rel in ["representation"]:
+			return True
 
 		if rel in ["part", "member"]:
 			# Downwards, internal simple partitioning
@@ -1030,6 +1034,7 @@ for doc in lido:
 	wid = lookup_or_map(f"ycba:object/{t}")
 	#note passing AUTOURI as ident to models generates a new autouri
 	what = model.HumanMadeObject(ident=urn_to_url_json(wid,"object"))
+	id1 = t
 	if t:
 		ycbagroupuu = map_uuid("ycba", "actor/ycba_actor_1281")  # Yale Center for British Art by TMS con ID
 		ycbagroup = model.Group(ident=urn_to_url_json(ycbagroupuu, "group"), label="Yale Center for British Art")
@@ -1387,7 +1392,7 @@ for doc in lido:
 					if stmt:
 						note = vocab.Note()
 						what.referred_to_by = note
-						note.content = stmt[0]
+						note.content = stmt[0].replace("\n","</br>").replace("\\n","").replace("---","</br>")
 						# Either it's a full on TextualWork, or it's a vanilla statement
 						# XXX Discuss which this is
 					continue
@@ -1923,6 +1928,14 @@ for doc in lido:
 			lo = model.LinguisticObject(label=val)
 			lo.digitally_carried_by = do
 			what.subject_of = lo
+
+	thumbdo = model.DigitalObject(label="Primary Image")
+	thumbdo.access_point = model.DigitalObject(ident=f"https://media.collections.yale.edu/thumbnail/ycba/obj/{id1}")
+	thumbdo.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300215302", label="Digital Image")
+	thumbvi = model.VisualItem(label="Primary Image")
+	thumbvi.digitally_shown_by = thumbdo
+	what.representation = thumbvi
+
 
 	img = images.get('large', images.get('medium', images.get('thumb', None)))
 	if img:
