@@ -1899,7 +1899,9 @@ for doc in lido:
 	# resourceWrap -- pull in images, seeAlso to lido, iiif manifest
 	resources = adminMd.xpath('./lido:resourceWrap/lido:resourceSet/lido:resourceRepresentation', namespaces=nss)
 	images = {}
+	has_image_resource = False
 	for res in resources:
+		has_image_resource = True
 		typ = res.xpath('./@lido:type', namespaces=nss)
 		uri = res.xpath('./lido:linkResource/text()', namespaces=nss)
 		if not uri or not typ:
@@ -1929,12 +1931,13 @@ for doc in lido:
 			lo.digitally_carried_by = do
 			what.subject_of = lo
 
-	thumbdo = model.DigitalObject(label="Primary Image")
-	thumbdo.access_point = model.DigitalObject(ident=f"https://media.collections.yale.edu/thumbnail/ycba/obj/{id1}")
-	thumbdo.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300215302", label="Digital Image")
-	thumbvi = model.VisualItem(label="Primary Image")
-	thumbvi.digitally_shown_by = thumbdo
-	what.representation = thumbvi
+	if has_image_resource:
+		thumbdo = model.DigitalObject(label="Primary Image")
+		thumbdo.access_point = model.DigitalObject(ident=f"https://media.collections.yale.edu/thumbnail/ycba/obj/{id1}")
+		thumbdo.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300215302", label="Digital Image")
+		thumbvi = model.VisualItem(label="Primary Image")
+		thumbvi.digitally_shown_by = thumbdo
+		what.representation = thumbvi
 
 
 	img = images.get('large', images.get('medium', images.get('thumb', None)))
