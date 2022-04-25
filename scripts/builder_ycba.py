@@ -156,6 +156,42 @@ event_role_rels = {
 	"http://vocab.getty.edu/aat/300025427": "exhibition"
 }
 
+attrib_qual = {
+	"attributed to": "http://vocab.getty.edu/page/aat/300404269",
+	"formerly": "http://collection.britishart.yale.edu/qualifier/formerly", #customURI
+	"formerly attributed to": "http://vocab.getty.edu/page/aat/300404270",
+	"imitator of": "http://collection.britishart.yale.edu/qualifier/imitatorof", #customURI
+	"style of": "http://vocab.getty.edu/page/aat/300404285"
+}
+
+attrib_qual_group = {
+	"workshop of": "http://vocab.getty.edu/page/aat/300404274", #not in ycba
+	"studio of": "http://vocab.getty.edu/page/aat/300404275",
+	"atelier of": "http://vocab.getty.edu/page/aat/300404277", #not in ycba
+	"office of": "http://vocab.getty.edu/page/aat/300404276", # not in ycba
+	"manufactory of": "http://vocab.getty.edu/page/aat/300404281", #not in ycba
+	"assistant to": "http://vocab.getty.edu/page/aat/300404278", #not in ycba
+	"associate of": "http://vocab.getty.edu/page/aat/300404280", #not in ycba
+	"school of": "http://vocab.getty.edu/page/aat/300404284", #not in ycba
+	"circle of": "http://vocab.getty.edu/page/aat/300404283",
+	"follower of": "http://vocab.getty.edu/page/aat/300404282",
+	"pupil of": "http://vocab.getty.edu/page/aat/300404279"
+}
+
+attrib_qual_infl = {
+	"after": "http://vocab.getty.edu/page/aat/300404286",
+	"copy after": "http://vocab.getty.edu/page/aat/300404287", #AAT technically "copyist of"
+	"style of": "http://vocab.getty.edu/page/aat/300404285",
+	"manner_of": "http://vocab.getty.edu/page/aat/300404288" #not in YCBA
+
+}
+
+attrib_prod_type = {
+	"print made by": "http://collection.britishart.yale.edu/producertype/printmadeby",  # customURI
+	"printed by": "http://collection.britishart.yale.edu/producertype/printedby",  # customURI
+	"published by": "http://collection.britishart.yale.edu/producertype/publishedby",  # customURI
+}
+
 new_rels = {}
 for (k,v) in event_role_rels.items():
 	new_rels[map_uuid_uri(k)] = v
@@ -471,6 +507,7 @@ def make_actor(a, source=""):
 
 		if atype in ['person','constituent']:
 			pclss = model.Person
+			#YER
 			who = pclss(ident=urn_to_url_json(uu, "person"))
 		elif atype in ['organization', 'institution', 'corporation']:
 			pclss = model.Group
@@ -951,7 +988,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,82154) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (107,82154,11602) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -969,7 +1006,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,82154) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (107,82154,11602) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1615,12 +1652,27 @@ for doc in lido:
 					to_serialize.append(who)
 
 			objectRole = a.xpath('./lido:actorInRole/lido:roleActor/lido:conceptID[@lido:type!="Life role"]', namespaces=nss)
+			aqa = "artist"
+			aqas = a.xpath('./lido:actorInRole/lido:attributionQualifierActor/text()', namespaces=nss)
+			for aqas1 in aqas:
+				aqa = aqas1.lower()
 			for objr in objectRole:
 				role_uri = get_concept_uri(objr, clss="concept")
+				#print(f"ROLE_URI:{role_uri}")
 				if role_uri in event_role_rels:
 					rel = event_role_rels[role_uri]
 					if rel == "carried_out":
-						eventobj.carried_out_by = who
+						#YER
+						#eventobj.carried_out_by = who
+						if aqa in attrib_qual:
+							attass = model.AttributeAssignment()
+							attass.classified_as = model.Type(ident=attrib_qual.get(aqa,"http://collection.britishart.yale.edu/qualifier/outsideofvocab"), label=aqa)
+							nestedprod = model.Production()
+							nestedprod.carried_out_by = who
+							attass.assigned = nestedprod
+							eventobj.attributed_by = attass
+						else:
+							eventobj.carried_out_by = who
 					elif rel == "created_by":
 						if hasattr(work, 'created_by'):
 							cre = work.created_by
