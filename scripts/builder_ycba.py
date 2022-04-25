@@ -157,33 +157,31 @@ event_role_rels = {
 }
 
 attrib_qual = {
-	"attributed to": "http://vocab.getty.edu/page/aat/300404269",
-	"formerly": "http://collection.britishart.yale.edu/qualifier/formerly", #customURI
-	"formerly attributed to": "http://vocab.getty.edu/page/aat/300404270",
-	"imitator of": "http://collection.britishart.yale.edu/qualifier/imitatorof", #customURI
-	"style of": "http://vocab.getty.edu/page/aat/300404285"
+	"attributed to": "http://vocab.getty.edu/page/aat/300404269", #107
+	"formerly": "http://collection.britishart.yale.edu/qualifier/formerly", #customURI - 120
+	"formerly attributed to": "http://vocab.getty.edu/page/aat/300404270", #55898
+	"imitator of": "http://collection.britishart.yale.edu/qualifier/imitatorof", #customURI - 156
 }
 
 attrib_qual_group = {
-	"workshop of": "http://vocab.getty.edu/page/aat/300404274", #not in ycba
-	"studio of": "http://vocab.getty.edu/page/aat/300404275",
-	"atelier of": "http://vocab.getty.edu/page/aat/300404277", #not in ycba
-	"office of": "http://vocab.getty.edu/page/aat/300404276", # not in ycba
-	"manufactory of": "http://vocab.getty.edu/page/aat/300404281", #not in ycba
-	"assistant to": "http://vocab.getty.edu/page/aat/300404278", #not in ycba
-	"associate of": "http://vocab.getty.edu/page/aat/300404280", #not in ycba
-	"school of": "http://vocab.getty.edu/page/aat/300404284", #not in ycba
-	"circle of": "http://vocab.getty.edu/page/aat/300404283",
-	"follower of": "http://vocab.getty.edu/page/aat/300404282",
-	"pupil of": "http://vocab.getty.edu/page/aat/300404279"
+	"workshop of": "http://vocab.getty.edu/page/aat/300404274",  # not in ycba - 37054
+	"studio of": "http://vocab.getty.edu/page/aat/300404275", #11602
+	"atelier of": "http://vocab.getty.edu/page/aat/300404277",  # not in ycba - No TMS records using "atelier of". We use/it's the same as "studio of"
+	"office of": "http://vocab.getty.edu/page/aat/300404276",  # not in ycba - No TMS records using "office of"
+	"manufactory of": "http://vocab.getty.edu/page/aat/300404281",  # not in ycba - No TMS records using "manufactory of"
+	"assistant to": "http://vocab.getty.edu/page/aat/300404278",  # not in ycba - No TMS records using "assistant to"
+	"associate of": "http://vocab.getty.edu/page/aat/300404280",  # not in ycba - No TMS records using "associate of"
+	"school of": "http://vocab.getty.edu/page/aat/300404284",  # not in ycba - No TMS records using "school of"
+	"circle of": "http://vocab.getty.edu/page/aat/300404283", # 48147
+	"follower of": "http://vocab.getty.edu/page/aat/300404282", # 11599
+	"pupil of": "http://vocab.getty.edu/page/aat/300404279" # 12361
 }
 
 attrib_qual_infl = {
-	"after": "http://vocab.getty.edu/page/aat/300404286",
-	"copy after": "http://vocab.getty.edu/page/aat/300404287", #AAT technically "copyist of"
-	"style of": "http://vocab.getty.edu/page/aat/300404285",
-	"manner_of": "http://vocab.getty.edu/page/aat/300404288" #not in YCBA
-
+	"after": "http://vocab.getty.edu/page/aat/300404286", # 21887
+	"copy after": "http://vocab.getty.edu/page/aat/300404287",  # AAT technically "copyist of" - 21988
+	"style of": "http://vocab.getty.edu/page/aat/300404285", #12809
+	"manner_of": "http://vocab.getty.edu/page/aat/300404288"  # not in YCBA - Not currently used in TMS
 }
 
 attrib_prod_type = {
@@ -379,6 +377,49 @@ def file_exists(clss, uu):
 
 
 actor_id_source = {}
+
+def make_qualified_group_actor(a,aqa,actor):
+	idents = []
+	ids = a.xpath('./lido:actorID', namespaces=nss)
+	for aid in ids:
+		if not aid.text:
+			continue
+		val = aid.text.strip()
+		if val == "ycba_actor_1281":
+			return (None, None)
+		src = aid.attrib.get('{%s}source' % nss['lido'], None)
+		if src:
+			src = src.lower()
+			if src in ["tms", "local"]:
+				src = "ycba"
+		typ = aid.attrib.get('{%s}type' % nss['lido'], None)
+		if not (typ, src, val) in idents:
+			idents.append((typ, src, val))
+	idents.sort()
+	uu = map_uuid("ycba", f"actor/qualgroup_{idents[0][2]}")
+	pclss = model.Group
+	who = pclss(ident=urn_to_url_json(uu, "group"))
+	names = a.xpath('./lido:nameActorSet/lido:appellationValue', namespaces=nss)
+	for n in names:
+		if not n.text:
+			continue
+		pref = n.attrib.get('{%s}pref' % nss['lido'], None)
+		val = n.text.strip()
+		if val:
+			val = f"{aqa.capitalize()} {val}"
+			if pref == "preferred":
+				who.identified_by = vocab.PrimaryName(value=val)
+				who._label = val
+			else:
+				who.identified_by = model.Name(value=val)
+				if not hasattr(who, '_label'):
+					who._label = val
+	who.classified_as = model.Type(ident=attrib_qual_group.get(aqa,"http://collection.britishart.yale.edu/qualifier/outsideofvocab"), label=aqa)
+	if not hasattr(who, 'formed_by'):
+		b = model.Formation()
+		who.formed_by = b
+	who.formed_by.influenced_by = actor
+	return who
 
 def make_actor(a, source=""):
 	
@@ -1642,6 +1683,13 @@ for doc in lido:
 		for a in actors:
 			actor_elm = a.xpath("./lido:actorInRole/lido:actor", namespaces=nss)[0]
 			(who, srlz) = make_actor(actor_elm, source=actor_source)
+			aqas = a.xpath('./lido:actorInRole/lido:attributionQualifierActor/text()', namespaces=nss)
+			aqa = ""
+			for aqa in aqas:
+				if aqa.lower() in attrib_qual_group:
+					qga_who = make_qualified_group_actor(actor_elm,aqa.lower(),who)
+					eventobj.carried_out_by = qga_who
+					to_serialize.append(qga_who)
 			if hasattr(who,'_label'):
 				aeonItemAuthor.append(who._label)
 			actorObjs.append(who)
@@ -1652,25 +1700,21 @@ for doc in lido:
 					to_serialize.append(who)
 
 			objectRole = a.xpath('./lido:actorInRole/lido:roleActor/lido:conceptID[@lido:type!="Life role"]', namespaces=nss)
-			aqa = "artist"
-			aqas = a.xpath('./lido:actorInRole/lido:attributionQualifierActor/text()', namespaces=nss)
-			for aqas1 in aqas:
-				aqa = aqas1.lower()
 			for objr in objectRole:
 				role_uri = get_concept_uri(objr, clss="concept")
 				#print(f"ROLE_URI:{role_uri}")
 				if role_uri in event_role_rels:
 					rel = event_role_rels[role_uri]
 					if rel == "carried_out":
-						#YER
-						#eventobj.carried_out_by = who
-						if aqa in attrib_qual:
+						if aqa.lower() in attrib_qual:
 							attass = model.AttributeAssignment()
-							attass.classified_as = model.Type(ident=attrib_qual.get(aqa,"http://collection.britishart.yale.edu/qualifier/outsideofvocab"), label=aqa)
+							attass.classified_as = model.Type(ident=attrib_qual.get(aqa.lower(),"http://collection.britishart.yale.edu/qualifier/outsideofvocab"), label=aqa)
 							nestedprod = model.Production()
 							nestedprod.carried_out_by = who
 							attass.assigned = nestedprod
 							eventobj.attributed_by = attass
+						elif aqa in attrib_qual_group:
+							print("Writing attrib_qual_group to production event")
 						else:
 							eventobj.carried_out_by = who
 					elif rel == "created_by":
