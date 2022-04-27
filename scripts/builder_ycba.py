@@ -158,9 +158,8 @@ event_role_rels = {
 
 attrib_qual = {
 	"attributed to": "http://vocab.getty.edu/page/aat/300404269", #107
-	"formerly": "http://collection.britishart.yale.edu/qualifier/formerly", #customURI - 120
+	"formerly": "http://vocab.getty.edu/page/aat/300404270", #collapse to AAT for formerly attributed to - 120
 	"formerly attributed to": "http://vocab.getty.edu/page/aat/300404270", #55898
-	"imitator of": "http://collection.britishart.yale.edu/qualifier/imitatorof", #customURI - 156
 }
 
 attrib_qual_group = {
@@ -181,13 +180,14 @@ attrib_qual_infl = {
 	"after": "http://vocab.getty.edu/page/aat/300404286", # 21887
 	"copy after": "http://vocab.getty.edu/page/aat/300404287",  # AAT technically "copyist of" - 21988
 	"style of": "http://vocab.getty.edu/page/aat/300404285", #12809
-	"manner_of": "http://vocab.getty.edu/page/aat/300404288"  # not in YCBA - Not currently used in TMS
+	"manner_of": "http://vocab.getty.edu/page/aat/300404288", # not in YCBA - Not currently used in TMS
+	"imitator of": "http://vocab.getty.edu/page/aat/300404288" #same AAT as manner of - 156
 }
 
 attrib_prod_type = {
-	"print made by": "http://collection.britishart.yale.edu/producertype/printmadeby",  # customURI
-	"printed by": "http://collection.britishart.yale.edu/producertype/printedby",  # customURI
-	"published by": "http://collection.britishart.yale.edu/producertype/publishedby",  # customURI
+	"print made by": "http://vocab.getty.edu/page/aat/300053225", # 21888
+	"printed by": " http://vocab.getty.edu/page/aat/300053319",  # 24976
+	"published by": "http://vocab.getty.edu/page/aat/300054686",  # 24976
 }
 
 new_rels = {}
@@ -1028,7 +1028,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (21887) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (21888) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1046,7 +1046,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (21887) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (21888) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1713,7 +1713,6 @@ for doc in lido:
 							attass.assigned = nestedprod
 							eventobj.attributed_by = attass
 						elif aqa.lower() in attrib_qual_infl:
-							print("Writing attrib_qual_group to production event")
 							attass = model.AttributeAssignment()
 							attass.classified_as = model.Type(ident=attrib_qual.get(aqa.lower(),"http://collection.britishart.yale.edu/qualifier/outsideofvocab"),label=aqa)
 							nestedprod = model.Production()
@@ -1725,6 +1724,13 @@ for doc in lido:
 							attass.assigned_property = "influenced_by"
 							eventobj.attributed_by = attass
 						#note attrib_qual_group handled above
+						elif aqa.lower() in attrib_qual_group:
+							print("Wrote attrib_qual_group to production event rather than artist")
+						elif aqa.lower() in attrib_prod_type:
+							partprod = model.Production()
+							partprod.carried_out_by = who
+							partprod.classified_as = model.Type(ident=attrib_prod_type.get(aqa.lower(),"http://collection.britishart.yale.edu/qualifier/outsideofvocab"),label=aqa)
+							eventobj.part = partprod
 						else:
 							eventobj.carried_out_by = who
 					elif rel == "created_by":
