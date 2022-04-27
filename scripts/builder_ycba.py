@@ -548,7 +548,6 @@ def make_actor(a, source=""):
 
 		if atype in ['person','constituent']:
 			pclss = model.Person
-			#YER
 			who = pclss(ident=urn_to_url_json(uu, "person"))
 		elif atype in ['organization', 'institution', 'corporation']:
 			pclss = model.Group
@@ -1029,7 +1028,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (107,82154,11602) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (21887) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1046,8 +1045,8 @@ except:
 	print("Error: unable to fetch LIDO data")
 
 if config1 == "test":
-	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (107,82154,11602) order by cast(local_identifier as signed) asc"
+	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (21887) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1713,8 +1712,19 @@ for doc in lido:
 							nestedprod.carried_out_by = who
 							attass.assigned = nestedprod
 							eventobj.attributed_by = attass
-						elif aqa in attrib_qual_group:
+						elif aqa.lower() in attrib_qual_infl:
 							print("Writing attrib_qual_group to production event")
+							attass = model.AttributeAssignment()
+							attass.classified_as = model.Type(ident=attrib_qual.get(aqa.lower(),"http://collection.britishart.yale.edu/qualifier/outsideofvocab"),label=aqa)
+							nestedprod = model.Production()
+							nestedprod.carried_out_by = who
+							#attass.assigned = nestedprod
+							attass.assigned = who
+							#ERJ source code here: https://github.com/thegetty/crom/blob/master/cromulent/model.py#L799
+							vocab.add_attribute_assignment_check()
+							attass.assigned_property = "influenced_by"
+							eventobj.attributed_by = attass
+						#note attrib_qual_group handled above
 						else:
 							eventobj.carried_out_by = who
 					elif rel == "created_by":
