@@ -109,6 +109,8 @@ model.factory.base_dir = output
 vocab.register_instance('troy ounces', {"parent": model.MeasurementUnit, "id": "300404394", "label": "troy ounces"})
 vocab.register_instance('pennyweight', {"parent": model.MeasurementUnit, "id": "300XXXXXX", "label": "pennyweight (dwt)"})
 vocab.register_vocab_class("AccessStatement", {"parent": model.LinguisticObject, "id": "300133046", "label": "Access Statement","metatype": "brief text"})
+vocab.register_vocab_class("Citation", {"parent": model.LinguisticObject, "id": "300311705", "label": "Citation","metatype": "brief text"})
+
 
 unknownUnit = model.MeasurementUnit(ident="urn:uuid:28DE5DAD-CA3A-4424-A3FA-25683637C622", label="Unknown Unit")
 instances = vocab.instances
@@ -1028,7 +1030,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (21888) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (107) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1046,7 +1048,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (21888) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (107) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1935,27 +1937,8 @@ for doc in lido:
 		for oid in biboids:
 			if oid.text and oid.text.strip():
 				uri = get_concept_uri(oid)
-				work = model.LinguisticObject(ident=urn_to_url_json(uri,"text"))
-				what.referred_to_by = work
-				to_serialize.append(work)
 				if disp:
-					work.referred_to_by = vocab.Description(content=disp[0])
-					# XXX This should use oclc metadata
-					tdisp = disp[0] if len(disp[0]) < 100 else disp[0][:96] + '...'
-					work._label = tdisp
-					work.identified_by = vocab.PrimaryName(content=tdisp)
-				if uri and uri[0] == "#":
-					# instead record as an identifier
-					iden = model.Identifier(value=oid.text.strip())
-					# XXX assign type based on the source
-					src = oid.xpath('./@lido:source', namespaces=nss)
-					if src:
-						iden.referred_to_by = vocab.SourceStatement(value=src[0])
-					work.identified_by = iden
-				#elif uri:
-					# make equivalent
-					if not hasattr(work, 'equivalent') or not uri in [x.id for x in work.equivalent]:
-						work.equivalent = model.LinguisticObject(ident=uri)
+					what.referred_to_by = vocab.Citation(content=disp[0])
 
 	# Credit line/Rights
 	# where rightsWorkSet/rightsType/conceptID/text() == 500303557 
