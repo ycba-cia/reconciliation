@@ -1030,7 +1030,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (107) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (24976) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1048,7 +1048,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (107) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (24976) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1600,7 +1600,7 @@ for doc in lido:
 					dt = None
 				if dt:
 					ts.begin_of_the_begin = dt[0]
-					ts.end_of_the_begin = dt[1]
+					ts.end_of_the_begin = date_time_minus_one_second(dt[1])
 			if eventDateEnd:
 				try:
 					dt = make_datetime(eventDateEnd[0])
