@@ -110,6 +110,7 @@ vocab.register_instance('troy ounces', {"parent": model.MeasurementUnit, "id": "
 vocab.register_instance('pennyweight', {"parent": model.MeasurementUnit, "id": "300XXXXXX", "label": "pennyweight (dwt)"})
 vocab.register_vocab_class("AccessStatement", {"parent": model.LinguisticObject, "id": "300133046", "label": "Access Statement","metatype": "brief text"})
 vocab.register_vocab_class("Citation", {"parent": model.LinguisticObject, "id": "300311705", "label": "Citation","metatype": "brief text"})
+vocab.register_vocab_class("CreatorDescription", {"parent": model.LinguisticObject, "id": "300435446", "label": "Creator Description","metatype": "brief text"})
 
 
 unknownUnit = model.MeasurementUnit(ident="urn:uuid:28DE5DAD-CA3A-4424-A3FA-25683637C622", label="Unknown Unit")
@@ -1030,7 +1031,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (24976) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (48147) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1048,7 +1049,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (24976) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (48147) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1687,10 +1688,15 @@ for doc in lido:
 			aqas = a.xpath('./lido:actorInRole/lido:attributionQualifierActor/text()', namespaces=nss)
 			aqa = ""
 			for aqa in aqas:
+				# remove "and " from qualifier for records like:
+				# https://harvester-bl.britishart.yale.edu/oaicatmuseum/OAIHandler?verb=GetRecord&identifier=oai:tms.ycba.yale.edu:48147&metadataPrefix=lido
+				if aqa.lower().startswith("and "):
+					aqa = aqa[4:]
 				if aqa.lower() in attrib_qual_group:
 					qga_who = make_qualified_group_actor(actor_elm,aqa.lower(),who)
 					eventobj.carried_out_by = qga_who
 					to_serialize.append(qga_who)
+					to_serialize.append(who)
 			if hasattr(who,'_label'):
 				aeonItemAuthor.append(who._label)
 			actorObjs.append(who)
@@ -1713,17 +1719,16 @@ for doc in lido:
 							nestedprod = model.Production()
 							nestedprod.carried_out_by = who
 							attass.assigned = nestedprod
+							#attass.referred_to_by = vocab.CreatorDescription(content=f"{aqa} {who._label}") #removed per 5/2/22 metadata meeting
 							eventobj.attributed_by = attass
 						elif aqa.lower() in attrib_qual_infl:
 							attass = model.AttributeAssignment()
 							attass.classified_as = model.Type(ident=attrib_qual.get(aqa.lower(),"http://collection.britishart.yale.edu/qualifier/outsideofvocab"),label=aqa)
-							nestedprod = model.Production()
-							nestedprod.carried_out_by = who
-							#attass.assigned = nestedprod
 							attass.assigned = who
 							#ERJ source code here: https://github.com/thegetty/crom/blob/master/cromulent/model.py#L799
 							vocab.add_attribute_assignment_check()
 							attass.assigned_property = "influenced_by"
+							#attass.referred_to_by = vocab.CreatorDescription(content=f"{aqa} {who._label}") #removed per 5/2/22 metadata meeting
 							eventobj.attributed_by = attass
 						#note attrib_qual_group handled above
 						elif aqa.lower() in attrib_qual_group:
@@ -1732,6 +1737,8 @@ for doc in lido:
 							partprod = model.Production()
 							partprod.carried_out_by = who
 							partprod.classified_as = model.Type(ident=attrib_prod_type.get(aqa.lower(),"http://collection.britishart.yale.edu/qualifier/outsideofvocab"),label=aqa)
+
+							#partprod.referred_to_by = vocab.CreatorDescription(content=f"{aqa} {who._label}") #removed per 5/2/22 metadata meeting
 							eventobj.part = partprod
 						else:
 							eventobj.carried_out_by = who
