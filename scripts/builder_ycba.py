@@ -434,7 +434,7 @@ def make_actor(a, source=""):
 		if not aid.text:
 			continue
 		val = aid.text.strip()
-		if val == "ycba_actor_1281":
+		if val == "ycba_actor_1281" and source != "acq":
 			return (None,None)
 		src = aid.attrib.get('{%s}source' % nss['lido'], None)
 		if src:
@@ -1595,6 +1595,14 @@ for doc in lido:
 			eventobj = model.Acquisition()
 			eventobj.transferred_title_of = what
 			provEntry.part = eventobj
+			acqactors = event.xpath('./lido:eventActor', namespaces=nss)
+			for acqa in acqactors:
+				acqactor_elm = acqa.xpath("./lido:actorInRole/lido:actor", namespaces=nss)[0]
+				acqroleactor = acqa.xpath("./lido:actorInRole/lido:roleActor/lido:conceptID/text()", namespaces=nss)
+				acqrelowner = acqa.xpath("./lido:actorInRole/lido:roleActor/lido:term/text()", namespaces=nss)
+				if len(acqroleactor) > 0 and len(acqrelowner) > 0 and acqroleactor[0] == "300203630" and acqrelowner[0] == "Owner":
+					(acqwho, srlz) = make_actor(acqactor_elm,"acq")
+					what.current_owner = acqwho
 		else:
 			print(f"Unknown event type: {etyp}")
 			continue
