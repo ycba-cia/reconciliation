@@ -990,7 +990,22 @@ for (k,v) in sets.items():
 	setobj.identified_by = model.Name(value=v)
 	setobj._label = v
 	sets_model[k] = setobj
+	setgroupuu = map_uuid("ycba", f"actor/ycba_actor_{k}")
+	setgroup = model.Group(ident=urn_to_url_json(setgroupuu, "group"), label=v)
+	setgroupname= model.Name(value=v)
+	setgroup.identified_by = setgroupname
+	setgroup.member_of = ycbagroup
+	setgroup.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300263534", label="Department")
+	curation_act = model.Activity(label="curation")
+	if k == "ycba:frames":
+		framesgroupuu = map_uuid("ycba", f"actor/ycba_actor_ycba:ps")
+		framesgroup = model.Group(ident=urn_to_url_json(framesgroupuu, "group"), label="Yale Center for British Art (YCBA): Paintings and Sculpture")
+		curation_act.carried_out_by = framesgroup
+	else:
+		curation_act.carried_out_by = setgroup
+	setobj.used_for = curation_act
 	serialize_global.append(setobj)
+	serialize_global.append(setgroup)
 serialize_method(serialize_global)
 
 # local:1281 and local:1253 are both YCBA, which is ULAN/500303557
@@ -1037,7 +1052,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (54429) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (9456) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1055,7 +1070,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (54429) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (9456) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
