@@ -1673,8 +1673,7 @@ for doc in lido:
 						period = model.Period()
 					if plbl:
 						period._label = plbl
-					eventobj.starts_with_or_after_the_start_of = period
-					eventobj.ends_before_or_with_the_end_of = period
+					eventobj.occurs_during = period
 
 		matstmt = event.xpath('./lido:eventMaterialsTech/lido:displayMaterialsTech/text()', namespaces=nss)
 		if matstmt:
