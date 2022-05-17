@@ -996,7 +996,8 @@ for (k,v) in sets.items():
 	setgroup.identified_by = setgroupname
 	setgroup.member_of = ycbagroup
 	setgroup.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300263534", label="Department")
-	curation_act = model.Activity(label="curation")
+	curation_act = model.Activity(label="Curating")
+	curation_act.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300054277", label="Curating")
 	if k == "ycba:frames":
 		framesgroupuu = map_uuid("ycba", f"actor/ycba_actor_ycba:ps")
 		framesgroup = model.Group(ident=urn_to_url_json(framesgroupuu, "group"), label="Yale Center for British Art (YCBA): Paintings and Sculpture")
