@@ -111,7 +111,7 @@ vocab.register_instance('pennyweight', {"parent": model.MeasurementUnit, "id": "
 vocab.register_vocab_class("AccessStatement", {"parent": model.LinguisticObject, "id": "300133046", "label": "Access Statement","metatype": "brief text"})
 vocab.register_vocab_class("Citation", {"parent": model.LinguisticObject, "id": "300311705", "label": "Citation","metatype": "brief text"})
 vocab.register_vocab_class("CreatorDescription", {"parent": model.LinguisticObject, "id": "300435446", "label": "Creator Description","metatype": "brief text"})
-
+vocab.register_vocab_class("CreditLine", {"parent": model.LinguisticObject, "id": "300435418", "label": "Credit Line","metatype": "brief text"})
 
 unknownUnit = model.MeasurementUnit(ident="urn:uuid:28DE5DAD-CA3A-4424-A3FA-25683637C622", label="Unknown Unit")
 instances = vocab.instances
@@ -1242,12 +1242,15 @@ for doc in lido:
 				whattext._label = f'"{value}" - Linguistic Content'
 		if pref == "preferred":
 			n.classified_as = vocab.instances['primary']
+			n.identified_by = vocab.DisplayName(value="Current Title")
 			# Override the first with preferred
 			what._label = value
 			if classtype == "visual":
 				whatvi._label = f'"{value}" - Visual Content'
 			if classtype == "text":
 				whattext._label = f'"{value}" - Linguistic Content'
+		else:
+			n.identified_by = vocab.DisplayName(value="Former Title(s)")
 		if not typ in ['Repository title', 'Alternate title', 'Alternative title']:
 			# XXX Process other title types here
 			pass
@@ -2016,7 +2019,7 @@ for doc in lido:
 	#<lido:conceptID lido:source="YCBA" lido:type="local" lido:label="object ownership">500303557</lido:conceptID>
 	credit = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet[./lido:rightsType/lido:conceptID/text()="500303557"]/lido:creditLine/text()', namespaces=nss)
 	if credit:
-		what.referred_to_by= vocab.CreditStatement(value=credit[0])
+		what.referred_to_by= vocab.CreditLine(value=credit[0])
 
     # recordWrap -- homepage
 	homepage = adminMd.xpath('./lido:recordWrap/lido:recordInfoSet/lido:recordInfoLink[./@lido:formatResource="html"]/text()', namespaces=nss)
