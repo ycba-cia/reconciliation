@@ -1053,7 +1053,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (9456) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (107) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1071,7 +1071,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (9456) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (107) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1494,7 +1494,8 @@ for doc in lido:
 					if stmt:
 						note = vocab.Note()
 						what.referred_to_by = note
-						note.content = stmt[0].replace("\n","</br>").replace("\\n","").replace("---","</br>")
+						stmt = f'<span class=\"lux_internal_data\">{stmt[0]}</span>'
+						note.content = stmt.replace("\n","</br>").replace("\\n","").replace("---","</br>")
 						# Either it's a full on TextualWork, or it's a vanilla statement
 						# XXX Discuss which this is
 					continue
