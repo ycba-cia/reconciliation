@@ -1053,7 +1053,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (107) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (82154) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1071,7 +1071,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (107) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (82154) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1311,6 +1311,9 @@ for doc in lido:
 		if typ == "lux yuag object":
 			pclss = model.HumanMadeObject
 			what.equivalent = pclss(ident=value)
+		if typ == "lux yuag visual item":
+			pclss = model.HumanMadeObject
+			whatvi.equivalent = pclss(ident=value)
 
 	# repositorySet -- type is always current --> current owner
 	#      <lido:repositoryName>
