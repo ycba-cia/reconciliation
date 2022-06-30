@@ -1053,7 +1053,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (82154) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (316,1505,1507,34440) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1071,7 +1071,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (82154) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (316,1505,1507,34440) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1201,7 +1201,7 @@ for doc in lido:
 		whattext = model.LinguisticObject(ident=urn_to_url_json(wtid,"text"))
 		what.carries = whattext
 		for genre in genres:
-			whatvi.classified_as = genre
+			whattext.classified_as = genre
 		to_serialize.append(whattext)
 	if "Manuscript" not in classterms or len(classterms) > 1:
 		classtype = "visual"
@@ -2000,23 +2000,32 @@ for doc in lido:
 	rightsurl1 = ""
 	rightsterm1 = ""
 	copyright1 = ""
-	rightsurl = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="object copyright"]/following-sibling::*[@lido:label="url"]/text()',namespaces=nss)
+	rightsurl = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="copyright statement"]/following-sibling::*[@lido:type="url"]/text()',namespaces=nss)
 	if rightsurl:
 		rightsurl1 = rightsurl[0]
-	rightsterm = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="object copyright"]/following-sibling::*[not(@lido:label="url")]/text()',namespaces=nss)
+	rightsterm = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="copyright statement"]/following-sibling::*[@lido:type="url"]/@lido:label',namespaces=nss)
 	if rightsterm:
 		rightsterm1 = rightsterm[0]
-	copyright = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="object copyright"]/../../lido:creditLine/text()',namespaces=nss)
-	if copyright:
+	copyright = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="copyright"]/../lido:term/text()',namespaces=nss)
+	if copyright and rightsterm:
 		copyright1 = copyright[0]
-	#if rightsurl and rightsterm:
+		if rightsterm1 == "In Copyright":
+			if classtype == "visual":
+				whatvi.referred_to_by = vocab.RightsStatement(value=copyright1)
+			if classtype == "text":
+				whattext.referred_to_by = vocab.RightsStatement(value=copyright1)
 	if rightsurl and rightsterm:
-		what.referred_to_by = model.LinguisticObject(ident=rightsurl1,label=rightsterm1)
+		if classtype == "visual":
+			right = model.Right(label="Copyright of Image")
+			right.classified_as = model.Type(ident=rightsurl1, label=rightsterm1)
+			right.identified_by = vocab.DisplayName(value=rightsterm1)
+			whatvi.subject_to = right
+		if classtype == "text":
+			right = model.Right(label="Copyright of Text")
+			right.classified_as = model.Type(ident=rightsurl1, label=rightsterm1)
+			right.identified_by = vocab.DisplayName(value=rightsterm1)
+			whattext.subject_to = right
 
-	#copyright statement
-	copyright = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet/lido:rightsType/lido:conceptID[@lido:label="object copyright" and text()="55"]/../../lido:creditLine/text()',namespaces=nss)
-	if copyright:
-		what.referred_to_by = vocab.RightsStatement(value=copyright[0])
 	# creditline
 	# this xpath should work as the following is hardcoded
 	#<lido:conceptID lido:source="YCBA" lido:type="local" lido:label="object ownership">500303557</lido:conceptID>
