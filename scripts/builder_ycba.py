@@ -160,37 +160,37 @@ event_role_rels = {
 }
 
 attrib_qual = {
-	"attributed to": "http://vocab.getty.edu/page/aat/300404269", #107
-	"formerly": "http://vocab.getty.edu/page/aat/300404270", #collapse to AAT for formerly attributed to - 120
-	"formerly attributed to": "http://vocab.getty.edu/page/aat/300404270", #55898
+	"attributed to": "http://vocab.getty.edu/aat/300404269", #107
+	"formerly": "http://vocab.getty.edu/aat/300404270", #collapse to AAT for formerly attributed to - 120
+	"formerly attributed to": "http://vocab.getty.edu/aat/300404270", #55898
 }
 
 attrib_qual_group = {
-	"workshop of": "http://vocab.getty.edu/page/aat/300404274",  # not in ycba - 37054
-	"studio of": "http://vocab.getty.edu/page/aat/300404275", #11602
-	"atelier of": "http://vocab.getty.edu/page/aat/300404277",  # not in ycba - No TMS records using "atelier of". We use/it's the same as "studio of"
-	"office of": "http://vocab.getty.edu/page/aat/300404276",  # not in ycba - No TMS records using "office of"
-	"manufactory of": "http://vocab.getty.edu/page/aat/300404281",  # not in ycba - No TMS records using "manufactory of"
-	"assistant to": "http://vocab.getty.edu/page/aat/300404278",  # not in ycba - No TMS records using "assistant to"
-	"associate of": "http://vocab.getty.edu/page/aat/300404280",  # not in ycba - No TMS records using "associate of"
-	"school of": "http://vocab.getty.edu/page/aat/300404284",  # not in ycba - No TMS records using "school of"
-	"circle of": "http://vocab.getty.edu/page/aat/300404283", # 48147
-	"follower of": "http://vocab.getty.edu/page/aat/300404282", # 11599
-	"pupil of": "http://vocab.getty.edu/page/aat/300404279" # 12361
+	"workshop of": "http://vocab.getty.edu/aat/300404274",  # not in ycba - 37054
+	"studio of": "http://vocab.getty.edu/aat/300404275", #11602
+	"atelier of": "http://vocab.getty.edu/aat/300404277",  # not in ycba - No TMS records using "atelier of". We use/it's the same as "studio of"
+	"office of": "http://vocab.getty.edu/aat/300404276",  # not in ycba - No TMS records using "office of"
+	"manufactory of": "http://vocab.getty.edu/aat/300404281",  # not in ycba - No TMS records using "manufactory of"
+	"assistant to": "http://vocab.getty.edu/aat/300404278",  # not in ycba - No TMS records using "assistant to"
+	"associate of": "http://vocab.getty.edu/aat/300404280",  # not in ycba - No TMS records using "associate of"
+	"school of": "http://vocab.getty.edu/aat/300404284",  # not in ycba - No TMS records using "school of"
+	"circle of": "http://vocab.getty.edu/aat/300404283", # 48147
+	"follower of": "http://vocab.getty.edu/aat/300404282", # 11599
+	"pupil of": "http://vocab.getty.edu/aat/300404279" # 12361
 }
 
 attrib_qual_infl = {
-	"after": "http://vocab.getty.edu/page/aat/300404286", # 21887
-	"copy after": "http://vocab.getty.edu/page/aat/300404287",  # AAT technically "copyist of" - 21988
-	"style of": "http://vocab.getty.edu/page/aat/300404285", #12809
-	"manner_of": "http://vocab.getty.edu/page/aat/300404288", # not in YCBA - Not currently used in TMS
-	"imitator of": "http://vocab.getty.edu/page/aat/300404288" #same AAT as manner of - 156
+	"after": "http://vocab.getty.edu/aat/300404286", # 21887
+	"copy after": "http://vocab.getty.edu/aat/300404287",  # AAT technically "copyist of" - 21988
+	"style of": "http://vocab.getty.edu/aat/300404285", #12809
+	"manner_of": "http://vocab.getty.edu/aat/300404288", # not in YCBA - Not currently used in TMS
+	"imitator of": "http://vocab.getty.edu/aat/300404288" #same AAT as manner of - 156
 }
 
 attrib_prod_type = {
-	"print made by": "http://vocab.getty.edu/page/aat/300053225", # 21888
-	"printed by": " http://vocab.getty.edu/page/aat/300053319",  # 24976
-	"published by": "http://vocab.getty.edu/page/aat/300054686",  # 24976
+	"print made by": "http://vocab.getty.edu/aat/300053225", # 21888
+	"printed by": " http://vocab.getty.edu/aat/300053319",  # 24976
+	"published by": "http://vocab.getty.edu/aat/300054686",  # 24976
 }
 
 new_rels = {}
