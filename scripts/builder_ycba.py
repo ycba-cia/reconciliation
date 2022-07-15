@@ -1049,11 +1049,11 @@ f.close()
 db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.com",
 					 user = "oaipmhuser",
 					 password = pw_from_t.strip(),
-					 database = "oaipmh")
+					 database = "oaipmh3")
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (316,1505,1507,34440) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (107) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1071,7 +1071,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (316,1505,1507,34440) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (107) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1500,7 +1500,7 @@ for doc in lido:
 					if stmt:
 						note = vocab.Note()
 						what.referred_to_by = note
-						stmt = f'<span class=\"lux_internal_data\">{stmt[0]}</span>'
+						stmt = f'<span class=\"lux_data\">{stmt[0]}</span>'
 						note.content = stmt.replace("\n","</br>").replace("\\n","").replace("---","</br>")
 						# Either it's a full on TextualWork, or it's a vanilla statement
 						# XXX Discuss which this is
@@ -1762,17 +1762,13 @@ for doc in lido:
 							nestedprod = model.Production()
 							nestedprod.carried_out_by = who
 							attass.assigned = nestedprod
+							vocab.add_attribute_assignment_check()
+							attass.assigned_property = "part"
 							#attass.referred_to_by = vocab.CreatorDescription(content=f"{aqa} {who._label}") #removed per 5/2/22 metadata meeting
 							eventobj.attributed_by = attass
 						elif aqa.lower() in attrib_qual_infl:
-							attass = model.AttributeAssignment()
-							attass.classified_as = model.Type(ident=attrib_qual.get(aqa.lower(),"http://collection.britishart.yale.edu/qualifier/outsideofvocab"),label=aqa)
-							attass.assigned = who
-							#ERJ source code here: https://github.com/thegetty/crom/blob/master/cromulent/model.py#L799
-							vocab.add_attribute_assignment_check()
-							attass.assigned_property = "influenced_by"
-							#attass.referred_to_by = vocab.CreatorDescription(content=f"{aqa} {who._label}") #removed per 5/2/22 metadata meeting
-							eventobj.attributed_by = attass
+							eventobj.influenced_by = who
+							eventobj.referred_to_by = vocab.CreatorDescription(content=f"{aqa} {who._label}")
 						#note attrib_qual_group handled above
 						elif aqa.lower() in attrib_qual_group:
 							print("Wrote attrib_qual_group to production event rather than artist")
@@ -1833,7 +1829,7 @@ for doc in lido:
 			else:
 				aeonItemAuthor1 = ""
 			accessStmtURL = aeonHost + "Action=" + aeonAction + "&Form=" + aeonForm + "&Value=" + aeonValue + "&Site=" + aeonSite + "&Callnumber=" + aeonCallNumber + "&ItemTitle=" + aeonItemTitle + "&ItemAuthor=" + aeonItemAuthor1 + "&ItemDate=" + aeonItemDate + "&Format=" + aeonFormat + "&Location=" + aeonLocation + "&mfhdID=" + aeonMfhdID + "&EADNumber=" + aeonEADNumber
-			accessStmt = f'<span class="lux_internal_data"><a href="{accessStmtURL}">{aeonLabel}</a></span>'
+			accessStmt = f'<span class="lux_data"><a href="{accessStmtURL}">{aeonLabel}</a></span>'
 		else:
 			accessStmt = onview
 		what.referred_to_by = vocab.AccessStatement(content=accessStmt)
@@ -2029,7 +2025,7 @@ for doc in lido:
 	# creditline
 	# this xpath should work as the following is hardcoded
 	#<lido:conceptID lido:source="YCBA" lido:type="local" lido:label="object ownership">500303557</lido:conceptID>
-	credit = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet[./lido:rightsType/lido:conceptID/text()="500303557"]/lido:creditLine/text()', namespaces=nss)
+	credit = adminMd.xpath('./lido:rightsWorkWrap/lido:rightsWorkSet[./lido:rightsType/lido:conceptID/text()="300055603"]/lido:creditLine/text()', namespaces=nss)
 	if credit:
 		what.referred_to_by= vocab.CreditLine(value=credit[0])
 
