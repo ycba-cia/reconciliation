@@ -434,7 +434,7 @@ def make_actor(a, source=""):
 		if not aid.text:
 			continue
 		val = aid.text.strip()
-		if val == "ycba_actor_1281" and source != "acq":
+		if val == "ycba_actor_1281" and source != "acq" and source != "exh":
 			return (None,None)
 		src = aid.attrib.get('{%s}source' % nss['lido'], None)
 		if src:
@@ -1049,7 +1049,7 @@ f.close()
 db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.com",
 					 user = "oaipmhuser",
 					 password = pw_from_t.strip(),
-					 database = "oaipmh3")
+					 database = "oaipmh")
 cursor = db.cursor()
 
 if config1 == "test":
@@ -1532,7 +1532,8 @@ for doc in lido:
 			# Construct fake id by combining earliest date and eid
 
 			# Exhibitions not as good as main object
-			actor_source = "life"
+			#actor_source = "life"
+			actor_source = "exh" #ERJ override "life" to get an actor for exhibits
 
 			eid = event.xpath('./lido:eventID[@lido:type="local"]/text()', namespaces=nss)
 			equiv_eid = event.xpath('./lido:eventID[@lido:type="LUX YUAG exhibition"]/text()', namespaces=nss)
@@ -1584,6 +1585,9 @@ for doc in lido:
 			#setobj.identified_by = model.Identifier(value=k)
 			setobj.identified_by = model.Name(value=v)
 			setobj._label = v
+			exh_activity = model.Activity(ident=eventobj.id,label=eventobj._label)
+			setobj.used_for = exh_activity
+			setobj.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300054766", label="Exhibition")
 			eventobj.used_specific_object = setobj
 			what.member_of = setobj
 			to_serialize.append(setobj)
