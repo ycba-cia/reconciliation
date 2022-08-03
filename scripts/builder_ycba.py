@@ -113,6 +113,36 @@ vocab.register_vocab_class("Citation", {"parent": model.LinguisticObject, "id": 
 vocab.register_vocab_class("CreatorDescription", {"parent": model.LinguisticObject, "id": "300435446", "label": "Creator Description","metatype": "brief text"})
 vocab.register_vocab_class("CreditLine", {"parent": model.LinguisticObject, "id": "300435418", "label": "Credit Line","metatype": "brief text"})
 
+#supertypes
+supertypes = {
+	"Brass Rubbing": "Visual Works", #9836
+	"Drawing & Watercolor": "Visual Works", #16978
+	"Drawing & Watercolor-Architectural": "Visual Works", #13172
+	"Drawing & Watercolor-Miniature": "Visual Works", #10667
+	"Drawing & Watercolor-Sketchbook": "Visual Works", #14852
+	"Painting": "Visual Works", #134
+	"Photograph": "Visual Works", #36011
+	"Poster": "Visual Works", #62720
+	"Print": "Visual Works", #17001
+	"Ceramic": "Objects", #1489
+	"Frame": "Objects", #65155
+	"Model": "Objects", #34988
+	"Paint Box": "Objects", #6819
+	"Painted Object": "Objects", #41366
+	"Print-printing-plate": "Objects", #55706
+	"Sculpture": "Objects", #16993
+	"Silver": "Objects", #38478
+	"Wedgewood": "Objects", #none 8/2/2022
+	"Manuscript": "Texts", #34440
+	"Rare Book": "Texts" #82229
+}
+
+supertype_uris = {
+	"Objects": "http://vocab.getty.edu/aat/300010331",
+	"Texts": "http://vocab.getty.edu/aat/300263751",
+	"Visual Works": "http://vocab.getty.edu/aat/300191086"
+}
+
 unknownUnit = model.MeasurementUnit(ident="urn:uuid:28DE5DAD-CA3A-4424-A3FA-25683637C622", label="Unknown Unit")
 instances = vocab.instances
 
@@ -1053,7 +1083,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (107) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (17001,1489,65155) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1071,7 +1101,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (107) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (17001,1489,65155) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1184,18 +1214,26 @@ for doc in lido:
 	classterms = []
 	for f in fields:
 		typ = make_concept(f)
+		cl = f.xpath('./lido:term/text()', namespaces=nss)[0]
+		classterms.append(cl)
+		#print(f"class:{cl}")
+		supertype = supertypes.get(cl)
+		#print(f"supertype:{supertype}")
+		supertype_uri = supertype_uris.get(supertype)
+		supertype_type = model.Type(ident=supertype_uri, label=supertype)
+		supertype_type.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300241507", label="Super Type")
+		what.classified_as = supertype_type
 		if not typ:
 			continue
 		if typ.id in classns:
 			# no need to duplicate this
 			continue
 		classns.append(typ.id)
-		classterms.append(f.xpath('./lido:term/text()',namespaces=nss)[0])
 		what.classified_as = typ
 		typ.classified_as = vocab.instances['work type']
 
 	classtype = ""
-	if "Manuscript" in classterms:
+	if "Manuscript" in classterms or "Rare Book" in classterms:
 		classtype = "text"
 		wtid = lookup_or_map(f"ycba:text/{t}")
 		whattext = model.LinguisticObject(ident=urn_to_url_json(wtid,"text"))
@@ -1203,7 +1241,7 @@ for doc in lido:
 		for genre in genres:
 			whattext.classified_as = genre
 		to_serialize.append(whattext)
-	if "Manuscript" not in classterms or len(classterms) > 1:
+	if ("Manuscript" not in classterms and "Rare Book" not in classterms) or len(classterms) > 1:
 		classtype = "visual"
 		wvid = lookup_or_map(f"ycba:visual/{t}")
 		whatvi = model.VisualItem(ident=urn_to_url_json(wvid,"visual"))
@@ -1212,7 +1250,7 @@ for doc in lido:
 			whatvi.classified_as = genre
 		to_serialize.append(whatvi)
 
-	#placeholder for future implementation
+	#placeholder for future implementation #update: implemented above
 	#add_supertype(classns)
 
 	# /lido:lido/lido:descriptiveMetadata/lido:objectIdentificationWrap/lido:titleWrap/lido:titleSet
@@ -1509,7 +1547,8 @@ for doc in lido:
 					# Only in 10306 
 					# <lido:displayEvent>(B. Weinreb, September 1966); from whom acquired by Paul Mellon.</lido:displayEvent>
 					note = vocab.ProvenanceStatement()
-					note.content = stmt[0]
+					stmt = f'<span class=\"lux_data\">{stmt[0]}</span>'
+					note.content = stmt.replace("\n","</br>").replace("\\n","").replace("---","</br>")
 					what.referred_to_by = note
 				else:
 					print(f"Unknown event type: {etypname[0]} in {fn}")
