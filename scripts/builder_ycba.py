@@ -112,6 +112,10 @@ vocab.register_vocab_class("AccessStatement", {"parent": model.LinguisticObject,
 vocab.register_vocab_class("Citation", {"parent": model.LinguisticObject, "id": "300311705", "label": "Citation","metatype": "brief text"})
 vocab.register_vocab_class("CreatorDescription", {"parent": model.LinguisticObject, "id": "300435446", "label": "Creator Description","metatype": "brief text"})
 vocab.register_vocab_class("CreditLine", {"parent": model.LinguisticObject, "id": "300435418", "label": "Credit Line","metatype": "brief text"})
+vocab.register_vocab_class("GalleryLabel", {"parent": model.LinguisticObject, "id": "300048722", "label": "Gallery Label","metatype": "brief text"})
+vocab.register_vocab_class("PubCatEntry", {"parent": model.LinguisticObject, "id": "300111999", "label": "Published Catalog Entry","metatype": "brief text"})
+vocab.register_vocab_class("CurComment", {"parent": model.LinguisticObject, "id": "300435416", "label": "Curatorial Comment","metatype": "brief text"})
+
 
 #supertypes
 supertypes = {
@@ -1083,7 +1087,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (17001,1489,65155) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (38536,766,16127,15340,10833) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1101,7 +1105,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (17001,1489,65155) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (38536,766,16127,15340,10833) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1157,6 +1161,7 @@ for doc in lido:
 	# <lido:lidoRecID lido:source="Yale Center for British Art" lido:type="local">YCBA/lido-TMS-17</lido:lidoRecID>
 	fields = dom.xpath(f'{wrap}/lido:lido/lido:lidoRecID', namespaces=nss)
 	t = None
+	#provEntry = None
 	for f in fields:
 		t = f.text 
 		# Strip to only trailing integer
@@ -1502,7 +1507,8 @@ for doc in lido:
 			msv = ms.xpath('./lido:measurementValue/text()', namespaces=nss)[0]
 
 			mtype = dimtypemap.get(str(mst), vocab.PhysicalDimension)
-			munit = dimunitmap.get(str(msu), unknownUnit)
+			#munit = dimunitmap.get(str(msu), unknownUnit)
+			munit = dimunitmap.get(str(msu))
 			try:
 				mval = float(msv)
 			except:
@@ -1528,36 +1534,42 @@ for doc in lido:
 
 		actor_source = "object"
 		# Type:
-		note_etypes = ["Curatorial comment","Curatorial description","Gallery label","Published catalog entry"]
+		#note_etypes = ["Curatorial comment","Curatorial description","Gallery label","Published catalog entry"]
 		etyp = event.xpath('./lido:eventType/lido:conceptID/text()', namespaces=nss)
-		if not etyp:
-			etypname = event.xpath('./lido:eventType/lido:term/text()', namespaces=nss)
-			if etypname:
-				if etypname[0] in note_etypes:
-					# Make an attributed statement
-					if stmt:
-						note = vocab.Note()
-						what.referred_to_by = note
-						stmt = f'<span class=\"lux_data\">{stmt[0]}</span>'
-						note.content = stmt.replace("\n","</br>").replace("\\n","").replace("---","</br>")
-						# Either it's a full on TextualWork, or it's a vanilla statement
-						# XXX Discuss which this is
-					continue
-				elif etypname[0] == "Provenance":
-					# Only in 10306 
-					# <lido:displayEvent>(B. Weinreb, September 1966); from whom acquired by Paul Mellon.</lido:displayEvent>
-					note = vocab.ProvenanceStatement()
-					stmt = f'<span class=\"lux_data\">{stmt[0]}</span>'
-					note.content = stmt.replace("\n","</br>").replace("\\n","").replace("---","</br>")
-					what.referred_to_by = note
-				else:
-					print(f"Unknown event type: {etypname[0]} in {fn}")
-			else:
-				print("No type ... dropping it on the floor")
-			continue
-		else:
-			etyp = etyp[0]
-
+		etyp = etyp[0]
+		#print(f"etyp:{etyp}")
+		if etyp == "300055863":
+			#Provenance
+			provnote = vocab.ProvenanceStatement()
+			stmt = f'<span class=\"lux_data\">{stmt[0]}</span>'
+			provnote.content = stmt.replace("\n", "</br>").replace("\\n", "").replace("---", "</br>")
+			what.referred_to_by = provnote
+			#if provEntry is not None:
+				#provEntry.referred_to_by = provnote
+		elif etyp == "300048722":
+			#Gallery Label
+			if stmt:
+				stmtHTML = f'<span class=\"lux_data\">{stmt[0]}</span>'
+				stmtHTML2 = stmtHTML.replace("\n", "</br>").replace("\\n", "").replace("---", "</br>")
+				gallerylabel = vocab.GalleryLabel(value=stmtHTML2)
+				gallerylabel.identified_by = model.Name(value="Gallery Label")
+				what.referred_to_by = gallerylabel
+		elif etyp == "300111999":
+			#Published Catalog Entry
+			if stmt:
+				stmtHTML = f'<span class=\"lux_data\">{stmt[0]}</span>'
+				stmtHTML2 = stmtHTML.replace("\n", "</br>").replace("\\n", "").replace("---", "</br>")
+				pubcatentry = vocab.PubCatEntry(value=stmtHTML2)
+				pubcatentry.identified_by = model.Name(value="Published Catalog Entry")
+				what.referred_to_by = pubcatentry
+		elif etyp == "300435416":
+			#Curatorial Comment/Curatorial Description
+			if stmt:
+				stmtHTML = f'<span class=\"lux_data\">{stmt[0]}</span>'
+				stmtHTML2 = stmtHTML.replace("\n", "</br>").replace("\\n", "").replace("---", "</br>")
+				currComment = vocab.CurComment(value=stmtHTML2)
+				currComment.identified_by = model.Name(value="Curatorial Comment")
+				what.referred_to_by = currComment
 		if etyp == "300054713":
 			# Production, add to object
 			eventobj = model.Production()
@@ -1654,6 +1666,9 @@ for doc in lido:
 				if len(acqroleactor) > 0 and len(acqrelowner) > 0 and acqroleactor[0] == "300203630" and acqrelowner[0] == "Owner":
 					(acqwho, srlz) = make_actor(acqactor_elm,"acq")
 					what.current_owner = acqwho
+		elif etyp in ["300111999","300048722","300055863","300435416"]:
+			#already processed respectively PubCatEntry, Gallery Label,Provenance, Curatorial
+			continue
 		else:
 			print(f"Unknown event type: {etyp}")
 			continue
