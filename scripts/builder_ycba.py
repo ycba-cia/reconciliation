@@ -1087,7 +1087,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (38536,766,16127,15340,10833) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (82154) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1105,7 +1105,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (38536,766,16127,15340,10833) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (82154) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1355,7 +1355,7 @@ for doc in lido:
 			pclss = model.HumanMadeObject
 			what.equivalent = pclss(ident=value)
 		if typ == "lux yuag visual item":
-			pclss = model.HumanMadeObject
+			pclss = model.VisualItem
 			whatvi.equivalent = pclss(ident=value)
 
 	# repositorySet -- type is always current --> current owner
@@ -1539,7 +1539,7 @@ for doc in lido:
 		etyp = etyp[0]
 		#print(f"etyp:{etyp}")
 		if etyp == "300055863":
-			#Provenance
+			#Provenance ex: 766
 			provnote = vocab.ProvenanceStatement()
 			stmt = f'<span class=\"lux_data\">{stmt[0]}</span>'
 			provnote.content = stmt.replace("\n", "</br>").replace("\\n", "").replace("---", "</br>")
@@ -1547,7 +1547,7 @@ for doc in lido:
 			#if provEntry is not None:
 				#provEntry.referred_to_by = provnote
 		elif etyp == "300048722":
-			#Gallery Label
+			#Gallery Label 38536
 			if stmt:
 				stmtHTML = f'<span class=\"lux_data\">{stmt[0]}</span>'
 				stmtHTML2 = stmtHTML.replace("\n", "</br>").replace("\\n", "").replace("---", "</br>")
@@ -1555,7 +1555,7 @@ for doc in lido:
 				gallerylabel.identified_by = model.Name(value="Gallery Label")
 				what.referred_to_by = gallerylabel
 		elif etyp == "300111999":
-			#Published Catalog Entry
+			#Published Catalog Entry 38536
 			if stmt:
 				stmtHTML = f'<span class=\"lux_data\">{stmt[0]}</span>'
 				stmtHTML2 = stmtHTML.replace("\n", "</br>").replace("\\n", "").replace("---", "</br>")
@@ -1563,7 +1563,7 @@ for doc in lido:
 				pubcatentry.identified_by = model.Name(value="Published Catalog Entry")
 				what.referred_to_by = pubcatentry
 		elif etyp == "300435416":
-			#Curatorial Comment/Curatorial Description
+			#Curatorial Comment/Curatorial Description 15340
 			if stmt:
 				stmtHTML = f'<span class=\"lux_data\">{stmt[0]}</span>'
 				stmtHTML2 = stmtHTML.replace("\n", "</br>").replace("\\n", "").replace("---", "</br>")
