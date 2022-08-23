@@ -225,6 +225,9 @@ attrib_prod_type = {
 	"print made by": "http://vocab.getty.edu/aat/300053225", # 21888
 	"printed by": " http://vocab.getty.edu/aat/300053319",  # 24976
 	"published by": "http://vocab.getty.edu/aat/300054686",  # 24976
+	"etched by": "http://vocab.getty.edu/aat/300053241", # 26108
+	"engraved by": "http://vocab.getty.edu/aat/300053225", #26108
+	"center engraved by": "http://vocab.getty.edu/aat/300053225" #26108
 }
 
 new_rels = {}
@@ -1087,7 +1090,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (82154) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (26108,32561,25519,47545) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1105,7 +1108,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (82154) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (26108,32561,25519,47545) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1793,6 +1796,8 @@ for doc in lido:
 				# https://harvester-bl.britishart.yale.edu/oaicatmuseum/OAIHandler?verb=GetRecord&identifier=oai:tms.ycba.yale.edu:48147&metadataPrefix=lido
 				if aqa.lower().startswith("and "):
 					aqa = aqa[4:]
+				elif aqa.lower().startswith("or "):
+						aqa = aqa[3:]
 				if aqa.lower() in attrib_qual_group:
 					qga_who = make_qualified_group_actor(actor_elm,aqa.lower(),who)
 					eventobj.carried_out_by = qga_who
@@ -1837,6 +1842,9 @@ for doc in lido:
 
 							#partprod.referred_to_by = vocab.CreatorDescription(content=f"{aqa} {who._label}") #removed per 5/2/22 metadata meeting
 							eventobj.part = partprod
+						elif "after" in aqa.lower():
+							eventobj.influenced_by = who
+							eventobj.referred_to_by = vocab.CreatorDescription(content=f"{aqa} {who._label}")
 						else:
 							eventobj.carried_out_by = who
 					elif rel == "created_by":
