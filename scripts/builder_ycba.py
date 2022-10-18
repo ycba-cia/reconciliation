@@ -197,8 +197,12 @@ attrib_qual = {
 	"attributed to": "http://vocab.getty.edu/aat/300404269", #107
 	"formerly": "http://vocab.getty.edu/aat/300404270", #collapse to AAT for formerly attributed to - 120
 	"formerly attributed to": "http://vocab.getty.edu/aat/300404270", #55898
+	"possibly": "http://vocab.getty.edu/aat/300404272", #12064
+	"related to": "?", #23422
+
 }
 
+#note: AAT terms not used in linked art pattern
 attrib_qual_group = {
 	"workshop of": "http://vocab.getty.edu/aat/300404274",  # not in ycba - 37054
 	"studio of": "http://vocab.getty.edu/aat/300404275", #11602
@@ -213,21 +217,108 @@ attrib_qual_group = {
 	"pupil of": "http://vocab.getty.edu/aat/300404279" # 12361
 }
 
+#note: AAT terms not used in linked art pattern
 attrib_qual_infl = {
 	"after": "http://vocab.getty.edu/aat/300404286", # 21887
 	"copy after": "http://vocab.getty.edu/aat/300404287",  # AAT technically "copyist of" - 21988
 	"style of": "http://vocab.getty.edu/aat/300404285", #12809
-	"manner_of": "http://vocab.getty.edu/aat/300404288", # not in YCBA - Not currently used in TMS
+	"in the manner of": "http://vocab.getty.edu/aat/300404288", #11387
 	"imitator of": "http://vocab.getty.edu/aat/300404288" #same AAT as manner of - 156
 }
 
+#those missing AAT terms could be mapped by qual_synonyms
 attrib_prod_type = {
-	"print made by": "http://vocab.getty.edu/aat/300053225", # 21888
 	"printed by": " http://vocab.getty.edu/aat/300053319",  # 24976
 	"published by": "http://vocab.getty.edu/aat/300054686",  # 24976
 	"etched by": "http://vocab.getty.edu/aat/300053241", # 26108
 	"engraved by": "http://vocab.getty.edu/aat/300053225", #26108
-	"center engraved by": "http://vocab.getty.edu/aat/300053225" #26108
+	"commissioned by": "http://vocab.getty.edu/aat/300393199", #40556
+	"text by": "http://vocab.getty.edu/aat/300054698", #21787
+	"annotated by": "", #56003
+	"drawn by": "", #22236
+	"etched and engraved by": "", #26252
+	"figure(s) by": "", #238
+	"sketched by": "", #75748
+	"aquatinted by": "http://vocab.getty.edu/aat/300053242", #44330
+	"verso by": "http://vocab.getty.edu/aat/300010292", #11972
+	"completed by": "", #29334
+	"landscape by": "", #238
+	"modeled by": "http://vocab.getty.edu/aat/300053130", #39100
+	"produced by": "", #
+	"color printing by": "", #
+	"colored by": "",
+	"drawing on plate by": "",
+	"commenced by": "",
+	"corrected by": "",
+	"designed by": "",
+	"alterations by": "",
+	"background by": "",
+	"painted by": "",
+	"sold by": "",
+	"flower basket and some of the draperies by": "",
+	"facimile color by": "",
+	"Identifying sitters in a painting by": ""
+}
+
+#these could be fixed in TMS, or remain in TMS with normalization mapping here for LUX
+qual_synonyms = {
+	"(?)": "possibly",
+	"after ?": "possibly after",
+	"previously": "formerly",
+	"prints made by": "engraved by",
+	"center engraved by": "engraved by",
+	"perhaps": "possibly",
+	"after (?)": "possibly after",
+	"engraving by": "engraved by",
+	"previously published by": "formerly published by",
+	"copy of print by": "printed by",
+	"previously attributed to": "formerly attributed to",
+	"after possibly": "possibly after",
+	"published:": "published by",
+	"copy of": "copy after",
+	"?": "possibly",
+	"formerly attributed:": "formerly attributed to",
+	"after?": "possibly after",
+	"possibly by": "possibly",
+	"formerly print made by": "formerly engraved by",
+	"(formerly) after": "formerly after",
+	"probably": "possibly",
+	"published:": "published by",
+	"print finished by": "print completed by",
+	"commissioned in 1732 by": "commissioned by",
+	"finished by": "completed by",
+	"student of the": "pupil of",
+	"cicle of (?)": "possibly circle of",
+	"print made by imitator of": "printed by imitator of",
+	"engravings by": "engraved by",
+	"drawing by": "drawn by",
+	"figures by": "figure(s) by",
+	"figure by": "figure(s) by",
+	"also (?)": "",
+	"and": "",
+	"or": "",
+	"and:": "",
+	"and / or": "",
+	"annotations by": "annotated by",
+	"and one etching by": "etched by",
+	"annotated": "annotated by,",
+	"print possibly made by": "possibly printed by",
+	"printed by the": "printed by",
+	"recto: print made by": "recto printed by",
+	"upper print made by": "upper printed by",
+	"student of": "pupil of",
+	"[": "",
+	"for": "",
+	"etching by": "etched by",
+	"copy of print made by": "copy of print after",
+	"design": "designed by",
+	"design by": "designed by",
+	"in the manner": "in the manner of",
+	"formerly:": "formerly",
+
+
+
+
 }
 
 new_rels = {}
@@ -1042,6 +1133,7 @@ for (k,v) in sets.items():
 	else:
 		curation_act.carried_out_by = setgroup
 	setobj.used_for = curation_act
+	setobj.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300025976", label="Collection")
 	serialize_global.append(setobj)
 	serialize_global.append(setgroup)
 serialize_method(serialize_global)
@@ -1090,7 +1182,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (26108,32561,25519,47545) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (30565) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1108,7 +1200,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (26108,32561,25519,47545) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (30565) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
