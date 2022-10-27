@@ -187,7 +187,7 @@ event_role_rels = {
 	"http://vocab.getty.edu/aat/300403974": "carried_out", # contributor?
 	"http://vocab.getty.edu/aat/300025492": "created_by", 
 	"http://vocab.getty.edu/aat/300025526": "created_by",
-	"http://vocab.getty.edu/aat/300203630": "transerred_title_to",
+	"http://vocab.getty.edu/aat/300203630": "transferred_title_to",
 	"http://collection.britishart.yale.edu/id/concept/63": "exhibition",  # lender / borrower?
 	"http://collection.britishart.yale.edu/id/concept/66": "exhibition",
 	"http://vocab.getty.edu/aat/300025427": "exhibition"
@@ -1182,7 +1182,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (30565) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (57554) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1200,7 +1200,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (30565) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (57554) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1878,86 +1878,76 @@ for doc in lido:
 		actors = event.xpath('./lido:eventActor', namespaces=nss)
 		actorObjs = []
 
+		prodactor_count = 0
 		for a in actors:
 			actor_elm = a.xpath("./lido:actorInRole/lido:actor", namespaces=nss)[0]
 			(who, srlz) = make_actor(actor_elm, source=actor_source)
-			aqas = a.xpath('./lido:actorInRole/lido:attributionQualifierActor/text()', namespaces=nss)
-			aqa = ""
-			for aqa in aqas:
-				# remove "and " from qualifier for records like:
-				# https://harvester-bl.britishart.yale.edu/oaicatmuseum/OAIHandler?verb=GetRecord&identifier=oai:tms.ycba.yale.edu:48147&metadataPrefix=lido
-				if aqa.lower().startswith("and "):
-					aqa = aqa[4:]
-				elif aqa.lower().startswith("or "):
+			if etyp == "300054713": #production
+				prodactor_count += 1
+				if hasattr(who, '_label') and prodactor_count == 1:
+					aeonItemAuthor.append(who._label)
+				aqas = a.xpath('./lido:actorInRole/lido:attributionQualifierActor/text()', namespaces=nss)
+				if not aqas: #29444 Robert Smirke
+					partprod = model.Production()
+					partprod.carried_out_by = who
+					if prodactor_count == 1:
+						partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300404050",label="Primary")
+					eventobj.part = partprod
+				actorDone = False
+				for aqa in aqas:
+					#print(aqa)
+					if aqa.lower().startswith("and"): #21987 James McArdell
 						aqa = aqa[3:]
-				if aqa.lower() in attrib_qual_group:
-					qga_who = make_qualified_group_actor(actor_elm,aqa.lower(),who)
-					eventobj.carried_out_by = qga_who
-					to_serialize.append(qga_who)
-					to_serialize.append(who)
-			if hasattr(who,'_label'):
-				aeonItemAuthor.append(who._label)
-			actorObjs.append(who)
+					if aqa.lower().startswith("and:"):
+						aqa = aqa[4:]
+					elif aqa.lower().startswith("or"): #22205 Joseph Bishop Pratt
+						aqa = aqa[2:]
+					elif aqa.lower().startswith("and / or"):
+						aqa = aqa[8:]
+					if aqa.lower().startswith("/ or"):  # 29444 Mary Smirke
+						aqa = aqa[4:]
+					aqa = aqa.lstrip()
+					#print(aqa)
+					if not aqa:  # 29444 Robert Smirke
+						partprod = model.Production()
+						partprod.carried_out_by = who
+						if prodactor_count == 1:
+							partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300404050",label="Primary")
+						eventobj.part = partprod
+						actorDone = True
+					if aqa.lower() in attrib_qual_group and actorDone == False:
+						qga_who = make_qualified_group_actor(actor_elm,aqa.lower(),who)
+						to_serialize.append(qga_who)
+						partprod = model.Production()
+						partprod.carried_out_by = qga_who
+						if prodactor_count == 1:
+							partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300404050",label="Primary")
+						eventobj.part = partprod
+						actorDone = True
+					for aqi in attrib_qual_infl:
+						if aqi in aqa.lower() and actorDone == False:
+							partprod = model.Production()
+							partprod.influenced_by = who
+							if prodactor_count == 1:
+								partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300404050",label="Primary")
+							partprod.referred_to_by = vocab.CreatorDescription(content=aqa)
+							eventobj.part = partprod
+							actorDone = True
+					if actorDone == False:
+						partprod = model.Production()
+						partprod.carried_out_by = who
+						if prodactor_count == 1:
+							partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300404050",label="Primary")
+						partprod.referred_to_by = vocab.CreatorDescription(content=aqa)
+						eventobj.part = partprod
+						actorDone = True
+			if etyp == "300054766" or etyp == "300157782":  # exhibition or acquisition
+				eventobj.carried_out_by = who
 			if srlz == "serialize":
 				if not hasattr(who, 'identified_by'):
 					print("Not serializing unnamed actor")
 				else:
 					to_serialize.append(who)
-
-			objectRole = a.xpath('./lido:actorInRole/lido:roleActor/lido:conceptID[@lido:type!="Life role"]', namespaces=nss)
-			for objr in objectRole:
-				role_uri = get_concept_uri(objr, clss="concept")
-				#print(f"ROLE_URI:{role_uri}")
-				if role_uri in event_role_rels:
-					rel = event_role_rels[role_uri]
-					if rel == "carried_out":
-						if aqa.lower() in attrib_qual:
-							attass = model.AttributeAssignment()
-							attass.classified_as = model.Type(ident=attrib_qual.get(aqa.lower(),"http://collection.britishart.yale.edu/qualifier/outsideofvocab"), label=aqa)
-							nestedprod = model.Production()
-							nestedprod.carried_out_by = who
-							attass.assigned = nestedprod
-							vocab.add_attribute_assignment_check()
-							attass.assigned_property = "part"
-							#attass.referred_to_by = vocab.CreatorDescription(content=f"{aqa} {who._label}") #removed per 5/2/22 metadata meeting
-							eventobj.attributed_by = attass
-						elif aqa.lower() in attrib_qual_infl:
-							eventobj.influenced_by = who
-							eventobj.referred_to_by = vocab.CreatorDescription(content=f"{aqa} {who._label}")
-						#note attrib_qual_group handled above
-						elif aqa.lower() in attrib_qual_group:
-							print("Wrote attrib_qual_group to production event rather than artist")
-						elif aqa.lower() in attrib_prod_type:
-							partprod = model.Production()
-							partprod.carried_out_by = who
-							partprod.classified_as = model.Type(ident=attrib_prod_type.get(aqa.lower(),"http://collection.britishart.yale.edu/qualifier/outsideofvocab"),label=aqa)
-
-							#partprod.referred_to_by = vocab.CreatorDescription(content=f"{aqa} {who._label}") #removed per 5/2/22 metadata meeting
-							eventobj.part = partprod
-						elif "after" in aqa.lower():
-							eventobj.influenced_by = who
-							eventobj.referred_to_by = vocab.CreatorDescription(content=f"{aqa} {who._label}")
-						else:
-							eventobj.carried_out_by = who
-					elif rel == "created_by":
-						if hasattr(work, 'created_by'):
-							cre = work.created_by
-						else:
-							cre = model.Creation()
-							work.created_by = cre
-						cre.carried_out_by = who					
-					elif rel == "transferred_title_to":
-						# (new) owner of object
-						eventobj.transferred_title_to = who
-					elif rel == "exhibition": 
-						# when YCBA is organizer of exhibition, but already there for borrower?
-						#print(" -- Lender/borrower role")
-						# 25427 is administrator also kind of meaningless
-						pass
-				else:
-					print(f"Unknown roleuri: {role_uri}")
-			if etyp == "300054766" or etyp == "300157782":  # exhibition or acquisition
-				eventobj.carried_out_by = who
 		# Methods for the event
 		# e.g. type of acquisition
 		meths = event.xpath('./lido:eventMethod', namespaces=nss)
