@@ -1097,6 +1097,12 @@ def date_time_minus_one_second(s):
 	s2 = t2.strftime('%Y-%m-%dT%H:%M:%SZ')
 	return s2
 
+def get_qual_type(aqa,boundary):
+	conceptuu = map_uuid("ycba", f"concept/{aqa.replace(' ','_')}")
+	qualtype = model.Type(ident=urn_to_url_json(conceptuu,"concept"), label = aqa)
+	if boundary==True:
+		qualtype.identified_by = vocab.PrimaryName(value=aqa)
+	return qualtype
 
 sets = {
 	"ycba:ps": "Yale Center for British Art (YCBA): Paintings and Sculpture",
@@ -1930,7 +1936,10 @@ for doc in lido:
 							partprod.influenced_by = who
 							if prodactor_count == 1:
 								partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300404050",label="Primary")
-							partprod.referred_to_by = vocab.CreatorDescription(content=aqa)
+							#partprod.referred_to_by = vocab.CreatorDescription(content=aqa)
+							#qual_type = get_qual_type(aqa)
+							partprod.classified_as = get_qual_type(aqa,False)
+							to_serialize.append(get_qual_type(aqa,True))
 							eventobj.part = partprod
 							actorDone = True
 					if actorDone == False:
@@ -1938,7 +1947,10 @@ for doc in lido:
 						partprod.carried_out_by = who
 						if prodactor_count == 1:
 							partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300404050",label="Primary")
-						partprod.referred_to_by = vocab.CreatorDescription(content=aqa)
+						#partprod.referred_to_by = vocab.CreatorDescription(content=aqa)
+						#qual_type = get_qual_type(aqa)
+						partprod.classified_as = get_qual_type(aqa, False)
+						to_serialize.append(get_qual_type(aqa, True))
 						eventobj.part = partprod
 						actorDone = True
 			if etyp == "300054766" or etyp == "300157782":  # exhibition or acquisition
