@@ -315,11 +315,10 @@ qual_synonyms = {
 	"design by": "designed by",
 	"in the manner": "in the manner of",
 	"formerly:": "formerly",
-
-
-
-
 }
+
+#suppress list to suppress long term loans
+suppress = [51893,56207]
 
 new_rels = {}
 for (k,v) in event_role_rels.items():
@@ -1188,7 +1187,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (57554) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (57554,56001) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1206,7 +1205,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (57554) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (57554,56001) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1229,6 +1228,11 @@ for doc in lido:
 	except:
 		print(f"ERROR finding set for {fn}")
 		continue
+
+	if int(fn) in suppress:
+		print(f"INFO per list suppressing processing of {fn}")
+		continue
+
 	#aeon variables
 	aeonSet= set
 	aeonLabel = "Accessible by request in the study Room"
