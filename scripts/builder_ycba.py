@@ -1104,9 +1104,9 @@ def get_qual_type(aqa,boundary):
 	return qualtype
 
 sets = {
-	"ycba:ps": "Yale Center for British Art (YCBA): Paintings and Sculpture",
-	"ycba:pd": "Yale Center for British Art (YCBA): Prints and Drawings",
-	"ycba:frames": "Yale Center for British Art (YCBA): Frames"
+	"ycba:ps": "Paintings and Sculpture Collection, Yale Center for British Art",
+	"ycba:pd": "Prints and Drawings Collection, Yale Center for British Art",
+	"ycba:frames": "Frames Collection, Yale Center for British Art"
 }
 serialize_global = []
 sets_model = {}
@@ -1124,8 +1124,8 @@ for (k,v) in sets.items():
 	setobj._label = v
 	sets_model[k] = setobj
 	setgroupuu = map_uuid("ycba", f"actor/ycba_actor_{k}")
-	setgroup = model.Group(ident=urn_to_url_json(setgroupuu, "group"), label=v)
-	setgroupname= model.Name(value=v)
+	setgroup = model.Group(ident=urn_to_url_json(setgroupuu, "group"), label=v.replace("Collection","Department"))
+	setgroupname= model.Name(value=v.replace("Collection","Department"))
 	setgroup.identified_by = setgroupname
 	setgroup.member_of = ycbagroup
 	setgroup.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300263534", label="Department")
@@ -1133,7 +1133,7 @@ for (k,v) in sets.items():
 	curation_act.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300054277", label="Curating")
 	if k == "ycba:frames":
 		framesgroupuu = map_uuid("ycba", f"actor/ycba_actor_ycba:ps")
-		framesgroup = model.Group(ident=urn_to_url_json(framesgroupuu, "group"), label="Yale Center for British Art (YCBA): Paintings and Sculpture")
+		framesgroup = model.Group(ident=urn_to_url_json(framesgroupuu, "group"), label="Paintings and Sculpture Department, Yale Center for British Art")
 		curation_act.carried_out_by = framesgroup
 	else:
 		curation_act.carried_out_by = setgroup
