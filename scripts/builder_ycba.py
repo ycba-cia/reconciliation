@@ -2204,7 +2204,7 @@ for doc in lido:
 			hp = vocab.WebPage(label=f"Online home page for \"{what._label}\"")
 		except:
 			hp = vocab.WebPage(label=f"Online home page for object")
-		hp.identified_by = vocab.PrimaryName(content=hp._label)
+		hp.identified_by = vocab.PrimaryName(content=f"View this record on the Yale Center for British Art website")
 		hp.format = "text/html"
 		hp.access_point = model.DigitalObject(ident=homepage[0].strip())
 		try:
