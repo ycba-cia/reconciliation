@@ -1757,7 +1757,8 @@ for doc in lido:
 				#prov_uu = AUTO_URI #ERJ 8/17/2021
 				prov_uu = lookup_or_map(f"ycba:prov/{fn}")
 			provEntry = vocab.ProvenanceEntry(ident=urn_to_url_json(prov_uu,"provenance"))
-			to_serialize.append(provEntry)
+			#suppress provenance entities temporarily per https://git.yale.edu/LUX/pipeline/issues/201
+			#to_serialize.append(provEntry)
 			provEntry._label = f"Acquisition of \"{what._label}\""
 			provEntry.identified_by = vocab.PrimaryName(content=provEntry._label)
 			eventobj = model.Acquisition()
