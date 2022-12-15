@@ -716,7 +716,7 @@ def make_actor(a, source=""):
 			#who.identified_by = vocab.SystemNumber(value=val)
 		elif typ == 'url':
 			who.equivalent = pclss(ident=val)
-		elif typ == "subjectActor":
+		elif typ in ["subjectActor","subjectActorAbout"]:
 			if src in entity_templates:
 				if val.startswith('http'):
 					who.equivalent = pclss(ident=val)
@@ -1187,7 +1187,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (3634,57554,56001) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (22022) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1205,7 +1205,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (3634,57554,56001) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (22022) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -2062,20 +2062,33 @@ for doc in lido:
 	for peep in peopleSubjs:
 		# Some peopleSubjs are really just classes
 		aid = peep.xpath("./lido:actorID/@lido:source", namespaces=nss)
+		aid2 = peep.xpath("./lido:actorID/@lido:type", namespaces=nss)[0]
 		if "AAT" in aid:
 			# concept
 			u = get_concept_uri(peep.xpath('./lido:actorID', namespaces=nss)[0])
 			t = model.Type(ident=u, label=peep.xpath('./lido:nameActorSet/lido:appellationValue/text()', namespaces=nss)[0])
 			if classtype == "visual":
-				whatvi.about = t
+				if aid2 == "subjectActorAbout":
+					whatvi.about = t
+				else:
+					whatvi.represents = t
 			if classtype == "text":
-				whattext.about = t
+				if aid2 == "subjectActorAbout":
+					whattext.about = t
+				else:
+					whattext.represents = t
 		else:
 			(who, srlz) = make_actor(peep, source="subject")
 			if classtype == "visual":
-				whatvi.about = who
+				if aid2 == "subjectActorAbout":
+					whatvi.about = who
+				else:
+					whatvi.represents = who
 			if classtype == "text":
-				whattext.about = who
+				if aid2 == "subjectActorAbout":
+					whattext.about = who
+				else:
+					whattext.represents = who
 			if srlz == "serialize":
 				to_serialize.append(who)
 
