@@ -138,7 +138,8 @@ supertypes = {
 	"Silver": "Objects", #38478
 	"Wedgewood": "Objects", #none 8/2/2022
 	"Manuscript": "Texts", #34440
-	"Rare Book": "Texts" #82229
+	"Rare Book": "Texts", #82229
+	"ALbum": "Objects" #
 }
 
 supertype_uris = {
@@ -857,7 +858,7 @@ def make_actor(a, source=""):
 				ts.end_of_the_end = date_time_minus_one_second(date[1])
 				birthDateTyp = a.xpath('./lido:vitalDatesActor/lido:earliestDate/@lido:type', namespaces=nss)[0]
 				if birthDateTyp == "estimatedDate":
-					ts.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300054617”", label="Estimated")
+					ts.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300054617", label="Estimated")
 			elif who.type == "Group":
 				if not hasattr(who, 'formed_by'):
 					b = model.Formation()
@@ -1187,7 +1188,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (22022) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (3610) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1205,7 +1206,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (22022) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (3610) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1997,7 +1998,7 @@ for doc in lido:
 			else:
 				aeonItemAuthor1 = ""
 			accessStmtURL = aeonHost + "Action=" + aeonAction + "&Form=" + aeonForm + "&Value=" + aeonValue + "&Site=" + aeonSite + "&Callnumber=" + aeonCallNumber + "&ItemTitle=" + aeonItemTitle + "&ItemAuthor=" + aeonItemAuthor1 + "&ItemDate=" + aeonItemDate + "&Format=" + aeonFormat + "&Location=" + aeonLocation + "&mfhdID=" + aeonMfhdID + "&EADNumber=" + aeonEADNumber
-			accessStmt = f'<span class="lux_data"><a href="{accessStmtURL}">{aeonLabel}</a></span>'
+			accessStmt = f'<span class=\'lux_data\'><a href=\'{accessStmtURL}\'>{aeonLabel}</a></span>'
 		else:
 			accessStmt = onview
 		what.referred_to_by = vocab.AccessStatement(content=accessStmt)
