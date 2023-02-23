@@ -1905,7 +1905,7 @@ for doc in lido:
 					partprod = model.Production()
 					partprod.carried_out_by = who
 					if prodactor_count == 1:
-						partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300404050",label="Primary")
+						partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300025103",label="Primary Artist")
 					eventobj.part = partprod
 				actorDone = False
 				for aqa in aqas:
@@ -1926,7 +1926,7 @@ for doc in lido:
 						partprod = model.Production()
 						partprod.carried_out_by = who
 						if prodactor_count == 1:
-							partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300404050",label="Primary")
+							partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300025103",label="Primary Artist")
 						eventobj.part = partprod
 						actorDone = True
 					if aqa.lower() in attrib_qual_group and actorDone == False:
@@ -1935,7 +1935,7 @@ for doc in lido:
 						partprod = model.Production()
 						partprod.carried_out_by = qga_who
 						if prodactor_count == 1:
-							partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300404050",label="Primary")
+							partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300025103",label="Primary Artist")
 						eventobj.part = partprod
 						actorDone = True
 					for aqi in attrib_qual_infl:
@@ -1943,7 +1943,7 @@ for doc in lido:
 							partprod = model.Production()
 							partprod.influenced_by = who
 							if prodactor_count == 1:
-								partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300404050",label="Primary")
+								partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300025103",label="Primary Artist")
 							#partprod.referred_to_by = vocab.CreatorDescription(content=aqa)
 							#qual_type = get_qual_type(aqa)
 							partprod.classified_as = get_qual_type(aqa,False)
@@ -1954,7 +1954,7 @@ for doc in lido:
 						partprod = model.Production()
 						partprod.carried_out_by = who
 						if prodactor_count == 1:
-							partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300404050",label="Primary")
+							partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300025103",label="Primary Artist")
 						#partprod.referred_to_by = vocab.CreatorDescription(content=aqa)
 						#qual_type = get_qual_type(aqa)
 						partprod.classified_as = get_qual_type(aqa, False)
