@@ -1379,7 +1379,7 @@ for doc in lido:
 			value = value[0]
 		typ = f.xpath('./@lido:type', namespaces=nss)[0]
 		if typ == "Repository title":
-			aeonItemTitle = value
+			aeonItemTitle = value[:254] #cap length of http param
 		pref = f.xpath('./lido:appellationValue/@lido:pref', namespaces=nss)[0]
 		n = model.Name(value=value)
 		what.identified_by = n
