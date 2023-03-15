@@ -1826,7 +1826,7 @@ for doc in lido:
 					# print(f"{fn} | eventEnd | {eventDateEnd[0]}")
 					dt = None
 				if dt:
-					if eventDateLbl[0] == "undated":
+					if eventDateLbl and eventDateLbl[0] == "undated":
 						ts.end_of_the_begin = date_time_minus_one_second(dt[1])
 						ts.end_of_the_end = date_time_minus_one_second(dt[1])
 					else:
