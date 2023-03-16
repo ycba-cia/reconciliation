@@ -352,13 +352,20 @@ def serialize_method(serialize_array):
 			#raise ValueError()
 
 		record_status = "same"
+
+		tmsid = ""
+		if "HumanMadeObject" in str(type(record)):
+			if "SystemNumber" in str(record.identified_by):
+				tmsid = record.identified_by[0].content
+		#print (f'ID:{tmsid}')
+
 		if not path.exists(outfn):
 			model.factory.toFile(record, compact=False, filename=outfn)
 			record_status = "New"
 			ts = time.time()
 			timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 			print(f"New    {record.id} {timestamp} {record._uri_segment}")
-			newactivities.append((record.id.split("/")[6].replace(".json",""), record._uri_segment, record_status, timestamp, timestamp))
+			newactivities.append((record.id.split("/")[6].replace(".json",""), record._uri_segment, record_status, timestamp, timestamp,tmsid))
 		else:
 			checkfn = os.path.join(model.factory.base_dir, "checkrecord.json")
 			model.factory.toFile(record, compact=False, filename=checkfn)
@@ -1071,7 +1078,7 @@ def lookup_or_map(key):
 	return uu
 
 def record_new_activities():
-		sql = "INSERT INTO activity (ycbaluxid,entitytype,statustype,created,updated) VALUES (%s,%s,%s,%s,%s)"
+		sql = "INSERT INTO activity (ycbaluxid,entitytype,statustype,created,updated,cmsid) VALUES (%s,%s,%s,%s,%s,%s)"
 		#print(newactivities)
 		cursor_act.executemany(sql, newactivities)
 		db_act.commit()
@@ -1188,7 +1195,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (195,65286) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (195,65286,420) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1206,7 +1213,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (195,65286) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (195,65286,420) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1459,7 +1466,7 @@ for doc in lido:
 			aeonCallNumber = value
 		if typ == "lux yuag object" or typ == "object wikidata":
 			pclss = model.HumanMadeObject
-			what.equivalent = pclss(ident=value)
+			what.equivalent = pclss(ident=value.replace("https","http").replace("/wiki/","/entity/"))
 		if typ == "lux yuag visual item":
 			pclss = model.VisualItem
 			whatvi.equivalent = pclss(ident=value)
