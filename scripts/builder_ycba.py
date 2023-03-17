@@ -1104,12 +1104,12 @@ def date_time_minus_one_second(s):
 	s2 = t2.strftime('%Y-%m-%dT%H:%M:%SZ')
 	return s2
 
-def get_qual_type(aqa,boundary):
-	conceptuu = map_uuid("ycba", f"concept/{aqa.replace(' ','_')}")
-	qualtype = model.Type(ident=urn_to_url_json(conceptuu,"concept"), label = aqa)
+def get_concept_from_term(term,boundary):
+	conceptuu = map_uuid("ycba", f"concept/{term.replace(' ','_')}")
+	concepttype = model.Type(ident=urn_to_url_json(conceptuu,"concept"), label = term)
 	if boundary==True:
-		qualtype.identified_by = vocab.PrimaryName(value=aqa)
-	return qualtype
+		concepttype.identified_by = vocab.PrimaryName(value=term)
+	return concepttype
 
 sets = {
 	"ycba:ps": "Paintings and Sculpture Collection, Yale Center for British Art",
@@ -1195,7 +1195,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (195,65286,420) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (757) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1213,7 +1213,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (195,65286,420) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (757) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1309,6 +1309,7 @@ for doc in lido:
 	classns = []
 	genres = []
 	for f in fields:
+		term = f.xpath('./lido:term/text()',namespaces=nss)[0]
 		if f.xpath('./lido:conceptID[@lido:type="Object name"]',namespaces=nss):
 			typ = make_concept(f)
 			if not typ:
@@ -1318,10 +1319,16 @@ for doc in lido:
 			what.classified_as = typ
 			typ.classified_as = vocab.instances['work type']
 		if f.xpath('./lido:conceptID[@lido:type="Genre"]',namespaces=nss):
-			typ = make_concept(f)
+			if f.xpath('./lido:conceptID[@lido:type="Genre"]/text()',namespaces=nss)[0].startswith("ycba_term_"):
+				typ = get_concept_from_term(term,True)
+				type_inline = get_concept_from_term(term,False)
+				genres.append(type_inline)
+				to_serialize.append(typ)
+			else:
+				typ = make_concept(f)
+				genres.append(typ)
 			if not typ:
 				continue
-			genres.append(typ)
 			typ.classified_as = vocab.instances['work type']
 
 	# <lido:classification><lido:conceptID lido:source="AAT" lido:type="Classification">300033618</lido:conceptID>
@@ -1611,8 +1618,8 @@ for doc in lido:
 			dimstat = vocab.DimensionStatement(value=stmt[0])
 		extent = d.xpath('./lido:objectMeasurements/lido:extentMeasurements/text()', namespaces=nss)
 		for e in extent:
-			dimstat.classified_as = get_qual_type(e, False)
-			to_serialize.append(get_qual_type(e,True))
+			dimstat.classified_as = get_concept_from_term(e, False)
+			to_serialize.append(get_concept_from_term(e,True))
 		what.referred_to_by = dimstat
 		mss = d.xpath('./lido:objectMeasurements/lido:measurementsSet', namespaces=nss)
 		for ms in mss:
@@ -1634,7 +1641,7 @@ for doc in lido:
 				dim = mtype(value=mval)
 				dim.unit = munit
 				if extent:
-					dim.classified_as = get_qual_type(extent[0], False)
+					dim.classified_as = get_concept_from_term(extent[0], False)
 				what.dimension = dim
 
 			# XXX process extent into a technique on an attributeassignment on the dimension
@@ -1964,9 +1971,9 @@ for doc in lido:
 							if prodactor_count == 1:
 								partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300025103",label="Primary Artist")
 							#partprod.referred_to_by = vocab.CreatorDescription(content=aqa)
-							#qual_type = get_qual_type(aqa)
-							partprod.classified_as = get_qual_type(aqa,False)
-							to_serialize.append(get_qual_type(aqa,True))
+							#qual_type = get_concept_from_term(aqa)
+							partprod.classified_as = get_concept_from_term(aqa,False)
+							to_serialize.append(get_concept_from_term(aqa,True))
 							eventobj.part = partprod
 							actorDone = True
 					if actorDone == False:
@@ -1975,9 +1982,9 @@ for doc in lido:
 						if prodactor_count == 1:
 							partprod.classified_as = model.Type(ident="http://vocab.getty.edu/page/aat/300025103",label="Primary Artist")
 						#partprod.referred_to_by = vocab.CreatorDescription(content=aqa)
-						#qual_type = get_qual_type(aqa)
-						partprod.classified_as = get_qual_type(aqa, False)
-						to_serialize.append(get_qual_type(aqa, True))
+						#qual_type = get_concept_from_term(aqa)
+						partprod.classified_as = get_concept_from_term(aqa, False)
+						to_serialize.append(get_concept_from_term(aqa, True))
 						eventobj.part = partprod
 						actorDone = True
 			if etyp == "300054766" or etyp == "300157782":  # exhibition or acquisition
