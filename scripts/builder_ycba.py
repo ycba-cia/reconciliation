@@ -1309,7 +1309,9 @@ for doc in lido:
 	classns = []
 	genres = []
 	for f in fields:
-		term = f.xpath('./lido:term/text()',namespaces=nss)[0]
+		term = ""
+		if f.xpath('./lido:term/text()',namespaces=nss):
+			term = f.xpath('./lido:term/text()',namespaces=nss)[0]
 		if f.xpath('./lido:conceptID[@lido:type="Object name"]',namespaces=nss):
 			typ = make_concept(f)
 			if not typ:
