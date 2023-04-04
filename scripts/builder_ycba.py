@@ -1195,7 +1195,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (757) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (16,1972) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1213,7 +1213,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (757) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (16,1972) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1616,12 +1616,13 @@ for doc in lido:
 	# But only ever 1 objectMeasurements per objectMeasurementsSet, and 1 measurementsSet per objectMeasurements
 	for d in dims:
 		stmt = d.xpath('./lido:displayObjectMeasurements/text()', namespaces=nss)
-		if stmt:
-			dimstat = vocab.DimensionStatement(value=stmt[0])
 		extent = d.xpath('./lido:objectMeasurements/lido:extentMeasurements/text()', namespaces=nss)
-		for e in extent:
-			dimstat.classified_as = get_concept_from_term(e, False)
-			to_serialize.append(get_concept_from_term(e,True))
+		if extent:
+			extentlabel = extent[0] + ": "
+		else:
+			extentlabel = ""
+		if stmt:
+			dimstat = vocab.DimensionStatement(value=extentlabel + stmt[0])
 		what.referred_to_by = dimstat
 		mss = d.xpath('./lido:objectMeasurements/lido:measurementsSet', namespaces=nss)
 		for ms in mss:
@@ -1644,6 +1645,7 @@ for doc in lido:
 				dim.unit = munit
 				if extent:
 					dim.classified_as = get_concept_from_term(extent[0], False)
+					to_serialize.append(get_concept_from_term(extent[0], True))
 				what.dimension = dim
 
 			# XXX process extent into a technique on an attributeassignment on the dimension
