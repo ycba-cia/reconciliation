@@ -32,7 +32,8 @@ entity_templates = {
 	"fast": "http://id.worldcat.org/fast/{ident}",
 	"glotto": "https://glottolog.org/resource/languoid/id/{ident}",
 	"ycba": "http://collection.britishart.yale.edu/id/{ident}",
-	"hponline": "https://www.historyofparliamentonline.org/{ident}"
+	"hponline": "https://www.historyofparliamentonline.org/{ident}",
+	"gbif": "https://www.gbif.org/species/{ident}"
 }
 
 prefix_by_uri = {}
