@@ -1123,7 +1123,7 @@ def setlanguage(lang):
 	if lang == "eng":
 		return vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
 	elif lang == "nld":
-		vocab.Language(ident="http://vocab.getty.edu/aat/300388256", label="Nederlands")
+		return vocab.Language(ident="http://vocab.getty.edu/aat/300388256", label="Nederlands")
 	elif lang == "fra":
 		return vocab.Language(ident="http://vocab.getty.edu/aat/300388306",label="Français")
 	elif lang == "spa":
