@@ -1119,6 +1119,22 @@ def get_concept_from_term(term,boundary):
 		concepttype.identified_by = vocab.PrimaryName(value=term)
 	return concepttype
 
+def setlanguage(lang):
+	if lang == "eng":
+		return vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+	elif lang == "nld":
+		vocab.Language(ident="http://vocab.getty.edu/aat/300388256", label="Nederlands")
+	elif lang == "fra":
+		return vocab.Language(ident="http://vocab.getty.edu/aat/300388306",label="Français")
+	elif lang == "spa":
+		return vocab.Language(ident="http://vocab.getty.edu/aat/300389311", label="Español")
+	elif lang == "deu":
+		return vocab.Language(ident="http://vocab.getty.edu/aat/300388344", label="Deutsch")
+	elif lang == "ita":
+		return vocab.Language(ident="http://vocab.getty.edu/aat/300388474", label="Italiano")
+	else:
+		return vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+
 sets = {
 	"ycba:ps": "Paintings and Sculpture Collection, Yale Center for British Art",
 	"ycba:pd": "Prints and Drawings Collection, Yale Center for British Art",
@@ -1203,7 +1219,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,3072,1731,23289,37304) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1221,7 +1237,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,3072,1731,23289,37304) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1405,6 +1421,11 @@ for doc in lido:
 		if typ == "Repository title":
 			aeonItemTitle = value[:254] #cap length of http param
 		pref = f.xpath('./lido:appellationValue/@lido:pref', namespaces=nss)[0]
+		lang = f.xpath('./lido:appellationValue/@xml:lang', namespaces=nss)
+		if lang:
+			lang = lang[0]
+		else:
+			lang = "eng"
 		n = model.Name(value=value)
 		what.identified_by = n
 		if not hasattr(what, '_label'):
@@ -1416,7 +1437,7 @@ for doc in lido:
 		if pref == "preferred":
 			n.classified_as = vocab.instances['primary']
 			n.identified_by = vocab.DisplayName(value="Current Title")
-			n.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277",label="English")
+			n.language = setlanguage(lang)
 			# Override the first with preferred
 			what._label = value
 			if classtype == "visual":
