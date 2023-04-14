@@ -1203,7 +1203,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (23121,4780) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1221,7 +1221,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (23121,4780) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1678,7 +1678,7 @@ for doc in lido:
 			#Provenance ex: 766
 			provnote = vocab.ProvenanceStatement()
 			stmt = f'<span class=\"lux_data\">{stmt[0]}</span>'
-			provnote.content = stmt.replace("\n", "</br>").replace("\\n", "").replace("---", "</br>")
+			provnote.content = stmt.replace("\n", "</br>").replace("\\n", "").replace("---", "")
 			what.referred_to_by = provnote
 			#if provEntry is not None:
 				#provEntry.referred_to_by = provnote
@@ -1686,7 +1686,7 @@ for doc in lido:
 			#Gallery Label 38536
 			if stmt:
 				stmtHTML = f'<span class=\"lux_data\">{stmt[0]}</span>'
-				stmtHTML2 = stmtHTML.replace("\n", "</br>").replace("\\n", "").replace("---", "</br>")
+				stmtHTML2 = stmtHTML.replace("\n", "</br>").replace("\\n", "").replace("---", "")
 				gallerylabel = vocab.GalleryLabel(value=stmtHTML2)
 				gallerylabel.identified_by = model.Name(value="Gallery Label")
 				what.referred_to_by = gallerylabel
@@ -1694,7 +1694,7 @@ for doc in lido:
 			#Published Catalog Entry 38536
 			if stmt:
 				stmtHTML = f'<span class=\"lux_data\">{stmt[0]}</span>'
-				stmtHTML2 = stmtHTML.replace("\n", "</br>").replace("\\n", "").replace("---", "</br>")
+				stmtHTML2 = stmtHTML.replace("\n", "</br>").replace("\\n", "").replace("---", "")
 				pubcatentry = vocab.PubCatEntry(value=stmtHTML2)
 				pubcatentry.identified_by = model.Name(value="Published Catalog Entry")
 				what.referred_to_by = pubcatentry
