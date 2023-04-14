@@ -1416,6 +1416,7 @@ for doc in lido:
 		if pref == "preferred":
 			n.classified_as = vocab.instances['primary']
 			n.identified_by = vocab.DisplayName(value="Current Title")
+			n.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277",label="English")
 			# Override the first with preferred
 			what._label = value
 			if classtype == "visual":
