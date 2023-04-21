@@ -554,7 +554,9 @@ def make_qualified_group_actor(a,aqa,actor):
 		if val:
 			val = f"{aqa.capitalize()} {val}"
 			if pref == "preferred":
-				who.identified_by = vocab.PrimaryName(value=val)
+				pn = vocab.PrimaryName(value=val)
+				pn.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+				who.identified_by = pn
 				who._label = val
 			else:
 				who.identified_by = model.Name(value=val)
@@ -751,7 +753,9 @@ def make_actor(a, source=""):
 		val = n.text.strip()
 		if val:
 			if pref == "preferred":
-				who.identified_by = vocab.PrimaryName(value=val)
+				pn = vocab.PrimaryName(value=val)
+				pn.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+				who.identified_by = pn
 				who._label = val
 			else:
 				who.identified_by = model.Name(value=val)
@@ -1050,7 +1054,9 @@ def make_place(elm, localid=None,issite=False):
 	for t, n2c in names_to_check:
 		if not n2c in names:
 			if t == "primary":
-				where.identified_by = vocab.PrimaryName(value=n2c)
+				pn = vocab.PrimaryName(value=n2c)
+				pn.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+				where.identified_by = pn
 			else:
 				where.identified_by = model.Name(value=n2c)
 
@@ -1116,7 +1122,9 @@ def get_concept_from_term(term,boundary):
 	conceptuu = map_uuid("ycba", f"concept/{term.replace(' ','_')}")
 	concepttype = model.Type(ident=urn_to_url_json(conceptuu,"concept"), label = term)
 	if boundary==True:
-		concepttype.identified_by = vocab.PrimaryName(value=term)
+		pn = vocab.PrimaryName(value=term)
+		pn.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+		concepttype.identified_by = pn
 	return concepttype
 
 def setlanguage(lang):
@@ -1157,7 +1165,10 @@ for (k,v) in sets.items():
 	sets_model[k] = setobj
 	setgroupuu = map_uuid("ycba", f"actor/ycba_actor_{k}")
 	setgroup = model.Group(ident=urn_to_url_json(setgroupuu, "group"), label=v.replace("Collection","Department"))
-	setgroupname= model.Name(value=v.replace("Collection","Department"))
+	n = model.Name(value=v.replace("Collection","Department"))
+	n.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+	setgroupname = identified_by = n
+	#setgroupname= model.Name(value=v.replace("Collection","Department"))
 	setgroup.identified_by = setgroupname
 	setgroup.member_of = ycbagroup
 	setgroup.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300263534", label="Department")
@@ -1219,7 +1230,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,3072,1731,23289,37304) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,3072,1731,23289,37304,11602) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1237,7 +1248,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,3072,1731,23289,37304) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,3072,1731,23289,37304,11602) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1437,7 +1448,9 @@ for doc in lido:
 		if pref == "preferred":
 			n.classified_as = vocab.instances['primary']
 			n.identified_by = vocab.DisplayName(value="Current Title")
-			n.language = setlanguage(lang)
+			n.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+			if lang != "eng":
+				n.language = setlanguage(lang)
 			# Override the first with preferred
 			what._label = value
 			if classtype == "visual":
@@ -1451,9 +1464,17 @@ for doc in lido:
 			pass
 	try:
 		if classtype == "visual":
-			whatvi.identified_by = model.Name(content=whatvi._label)
+			n = model.Name(content=whatvi._label)
+			n.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+			if lang != "eng":
+				n.language = setlanguage(lang)
+			whatvi.identified_by = n
 		if classtype == "text":
-			whattext.identified_by = model.Name(content=whattext._label)
+			n = model.Name(content=whattext._label)
+			n.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+			if lang != "eng":
+				n.language = setlanguage(lang)
+			whattext.identified_by = n
 	except:
 		print(f" --- {fn} does not have an appellation!")
 		if classtype == "visual":
@@ -1545,7 +1566,9 @@ for doc in lido:
 		done_owner = True
 		owner = vocab.MuseumOrg(ident=urn_to_url_json(owner,"group"), label=lbl)
 		owner.equivalent = model.Group(ident=entity_templates['ulan'].format(ident=bid))
-		owner.identified_by = model.Name(value=lbl)
+		n = model.Name(value=lbl)
+		n.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+		owner.identified_by = n
 		owner.residence = siteplace
 		actor_id_source[owner.id] = "pub"
 
@@ -1813,6 +1836,7 @@ for doc in lido:
 			#suppress provenance entities temporarily per https://git.yale.edu/LUX/pipeline/issues/201
 			#to_serialize.append(provEntry)
 			provEntry._label = f"Acquisition of \"{what._label}\""
+			# 4/20/23 - leaving as is but might want to add languge
 			provEntry.identified_by = vocab.PrimaryName(content=provEntry._label)
 			eventobj = model.Acquisition()
 			eventobj.transferred_title_of = what
