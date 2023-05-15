@@ -13,7 +13,8 @@ typemap = {
 	"provenance": "Activity",
 	"set":"Set",
 	"text":"LinguisticObject",
-	"visual":"VisualItem"
+	"visual":"VisualItem",
+        "concept":"Concept"
 }
 
 # connect to activity db

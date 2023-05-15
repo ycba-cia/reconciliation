@@ -1,0 +1,9 @@
+nohup python3 builder_ycba.py > logs/output-072821.log &
+aws s3 sync /home/ec2-user/reconciliation/data/ycba/linked_art s3://ycba-lux/v3 --acl public-read
+python3 activity_stream.py
+aws s3 sync /home/ec2-user/reconciliation/data/ycba/activity_stream s3://ycba-lux/activity_stream --acl public-read
+tar -zcvf linked_art_071822.tar.gz linked_art
+tar -tzf linked_art_122022.tar.gz | wc -l
+aws s3 cp /home/ec2-user/reconciliation/data/ycba/linked_art_071822.tar.gz s3://ycba-lux/compressed/linked_art_071822.tar.gz --acl public-read
+aws s3 cp ycba_name_db s3://ycba-lux/lmdb/ycba_name_db --recursive
+aws s3 cp identifier_db s3://ycba-lux/lmdb/identifier_db --recursive

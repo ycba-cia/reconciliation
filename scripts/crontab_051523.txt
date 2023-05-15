@@ -1,0 +1,4 @@
+0 10 * * TUE,WED,THU,FRI,SAT /home/ec2-user/reconciliation/scripts/startdaily.sh &> /home/ec2-user/reconciliation/scripts/logs/cron1.out
+0 11 * * TUE,WED,THU,FRI,SAT /home/ec2-user/reconciliation/scripts/startdailyas.sh &> /home/ec2-user/reconciliation/scripts/logs/cron2.out
+5 11 * * TUE,WED,THU,FRI,SAT /home/ec2-user/reconciliation/scripts/startawsas.sh &> /home/ec2-user/reconciliation/scripts/logs/cron3.out
+10 11 * * TUE,WED,THU,FRI,SAT /home/ec2-user/reconciliation/scripts/startaws.sh &> /home/ec2-user/reconciliation/scripts/logs/cron4.out
