@@ -751,8 +751,10 @@ def make_actor(a, source=""):
 
 		pref = n.attrib.get('{%s}pref' % nss['lido'], None)
 		val = n.text.strip()
+		#print(f"prefval: {pref} {val}")
 		if val:
 			if pref == "preferred":
+				#print(f"prefval: {pref} {val}")
 				pn = vocab.PrimaryName(value=val)
 				pn.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
 				who.identified_by = pn
@@ -1230,7 +1232,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (34,3072,1731,23289,37304,11602) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (173) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1248,7 +1250,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,3072,1731,23289,37304,11602) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (173) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1278,7 +1280,7 @@ for doc in lido:
 
 	#aeon variables
 	aeonSet= set
-	aeonLabel = "Accessible by request in the study Room"
+	aeonLabel = "Accessible by request in the Yale Center for British Art Study Room"
 	aeonHost = "https://aeon-mssa.library.yale.edu/aeon.dll?"
 	aeonAction = "10"
 	aeonForm = "20"
