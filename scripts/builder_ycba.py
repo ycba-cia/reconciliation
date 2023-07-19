@@ -1820,7 +1820,7 @@ for doc in lido:
 			setobj.identified_by = model.Name(value=v)
 			setobj._label = v
 			exh_activity = model.Activity(ident=eventobj.id,label=eventobj._label)
-			setobj.used_for = exh_activity
+			#setobj.used_for = exh_activity #ERJ removing bi lateral, leaving just eventobj.used_specific_object = setobj
 			setobj.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300054766", label="Exhibition")
 			eventobj.used_specific_object = setobj
 			what.member_of = setobj
@@ -1861,12 +1861,12 @@ for doc in lido:
 		# names
 
 		for s in stmt:
-			eventobj.identified_by = vocab.DisplayName(value=s)
+			eventobj.identified_by = vocab.PrimaryName(value=s)
 
 		if etyp != "300054686": # Don't put name of work on publishing activity
 			names = event.xpath('./lido:eventName/lido:appellationValue/text()', namespaces=nss)
 			if names:
-				eventobj.identified_by = vocab.PrimaryName(value=names[0])
+				eventobj.identified_by = vocab.DisplayName(value=names[0])
 				if len(names) > 1:
 					for n in names[1:]:
 						eventobj.identified_by = model.Name(value=n)
