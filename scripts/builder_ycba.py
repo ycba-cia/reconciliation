@@ -136,10 +136,31 @@ supertypes = {
 	"Print-printing-plate": "Objects", #55706
 	"Sculpture": "Objects", #16993
 	"Silver": "Objects", #38478
-	"Wedgewood": "Objects", #none 8/2/2022
+	"Wedgwood": "Objects", #none 8/2/2022
 	"Manuscript": "Texts", #34440
 	"Rare Book": "Texts", #82229
-	"ALbum": "Objects" #
+	"ALbum": "Objects", #
+	"Archive": "Objects",
+	"Broadside": "Visual Works",
+	"Coins & Medals": "Objects",
+	"Costume": "Objects",
+	"Document": "Texts",
+	"Ephemera": "Objects",
+	"Firearm": "Objects",
+	"Furniture": "Objects",
+	"Glass": "Objects",
+	"Globe": "Objects",
+	"Jewellery": "Objects",
+	"Panorama": "Visual Works",
+	"Paper conservation object record": "Visual Works",
+	"Reference book": "Texts",
+	"Speciman": "Objects",
+	"Stereoscope": "Objects",
+	"Textile": "Objects",
+	"Tool": "Objects",
+	"Toys&Games": "Objects",
+	"Video": "Visual Works",
+	"Wallpaper": "Visual Works"
 }
 
 supertype_uris = {
@@ -1232,7 +1253,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (173) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (59577) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1250,7 +1271,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (173) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (59577) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
