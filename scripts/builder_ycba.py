@@ -115,6 +115,7 @@ vocab.register_vocab_class("CreditLine", {"parent": model.LinguisticObject, "id"
 vocab.register_vocab_class("GalleryLabel", {"parent": model.LinguisticObject, "id": "300048722", "label": "Gallery Label","metatype": "brief text"})
 vocab.register_vocab_class("PubCatEntry", {"parent": model.LinguisticObject, "id": "300111999", "label": "Published Catalog Entry","metatype": "brief text"})
 vocab.register_vocab_class("CurComment", {"parent": model.LinguisticObject, "id": "300435416", "label": "Curatorial Comment","metatype": "brief text"})
+vocab.register_vocab_class("VisitorsStatement", {"parent": model.LinguisticObject, "id": "300025883", "label": "Visitors' Statement","metatype": "brief text"})
 
 
 #supertypes
@@ -1253,7 +1254,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (38536) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (666) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1271,7 +1272,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (38536) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (666) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1470,7 +1471,6 @@ for doc in lido:
 				whattext._label = f'"{value}" - Linguistic Content'
 		if pref == "preferred":
 			n.classified_as = vocab.instances['primary']
-			n.identified_by = vocab.DisplayName(value="Current Title")
 			n.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
 			if lang != "eng":
 				n.language = setlanguage(lang)
@@ -1481,7 +1481,9 @@ for doc in lido:
 			if classtype == "text":
 				whattext._label = f'"{value}" - Linguistic Content'
 		else:
-			n.identified_by = vocab.DisplayName(value="Former Title(s)")
+			#Below: Going with Alternate rather than Former Titles
+			#n.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300417203", label="Former Title(s)")
+			n.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300417227", label="Alternate Title(s)")
 		if not typ in ['Repository title', 'Alternate title', 'Alternative title']:
 			# XXX Process other title types here
 			pass
@@ -2112,6 +2114,10 @@ for doc in lido:
 		#if fn == "82154":
 			#accessStmt = "Not on view at Yale Center for British Art"
 		what.referred_to_by = vocab.AccessStatement(content=accessStmt)
+
+	visitors_stmt = "<a href='https://britishart.yale.edu/hours-and-visitor-guidelines'>Plan Your Visit</a>"
+	visitors_stmt_lo = vocab.VisitorsStatement(content=visitors_stmt)
+	what.referred_to_by = visitors_stmt_lo
 
 	# objectRelationWrap / subjects
 	subjs = descMd.xpath('./lido:objectRelationWrap/lido:subjectWrap/lido:subjectSet/lido:subject/lido:subjectConcept', namespaces=nss)
