@@ -170,6 +170,19 @@ supertype_uris = {
 	"Visual Works": "http://vocab.getty.edu/aat/300191086"
 }
 
+titletypes = {
+	"Repository title": "http://vocab.getty.edu/aat/300404670", #1716 preferred terms
+	"Collective title": "http://vocab.getty.edu/aat/300417198", #1716
+	"Alternate title": "http://vocab.getty.edu/aat/300417227", #1662
+	"Former title": "http://vocab.getty.edu/aat/300417203", #7
+	"Verso title": "http://vocab.getty.edu/aat/300417227", #611 alternate
+	"Inscribed title": "http://vocab.getty.edu/aat/300417202", #1100
+	"Exhibited title": "http://vocab.getty.edu/aat/300417207", #8
+	"Foreign language title": "http://vocab.getty.edu/aat/300417227", #3085 alternate
+	"Creator's title": "http://vocab.getty.edu/aat/300417201", #40
+	"Scratched title": "http://vocab.getty.edu/aat/300417227" #16029 alternate
+}
+
 unknownUnit = model.MeasurementUnit(ident="urn:uuid:28DE5DAD-CA3A-4424-A3FA-25683637C622", label="Unknown Unit")
 instances = vocab.instances
 
@@ -1254,7 +1267,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (666) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (57554) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1272,7 +1285,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (666) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (57554) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1481,9 +1494,7 @@ for doc in lido:
 			if classtype == "text":
 				whattext._label = f'"{value}" - Linguistic Content'
 		else:
-			#Below: Going with Alternate rather than Former Titles
-			#n.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300417203", label="Former Title(s)")
-			n.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300417227", label="Alternate Title(s)")
+			n.classified_as = model.Type(ident=titletypes.get(typ,"http://vocab.getty.edu/aat/300417227"), label=typ)
 		if not typ in ['Repository title', 'Alternate title', 'Alternative title']:
 			# XXX Process other title types here
 			pass
