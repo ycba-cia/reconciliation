@@ -830,12 +830,11 @@ def make_actor(a, source=""):
 				pathlib.Path(outdir).mkdir(parents=True, exist_ok=True)
 				outfn = os.path.join(outdir, uu[uu.rfind(':')+1:] + ".json")
 				where = model.Place(ident=urn_to_url_json(uu, "place"), label=label)
+				n1 = model.Name(value=label)
+				n1.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+				where.identified_by = n1
 				where.equivalent = model.Place(ident=f"http://vocab.getty.edu/tgn/{txt}")
-				if not path.exists(outfn):
-					print(f"Warning: {outfn} does't exist on disk, need to serialize")
-					to_serialize.append(where)
-					#continue
-				#where = model.Place(ident=urn_to_url_json(uu, "place"), label=label)
+				to_serialize.append(where)
 			else:
 				uu = f"urn:uuid:{uuid.uuid4()}"
 				DB[uu] = {src: txt}
@@ -843,6 +842,9 @@ def make_actor(a, source=""):
 				DB.commit()
 				where = model.Place(ident=urn_to_url_json(uu, "place"), label=label)
 				where.equivalent = model.Place(ident=f"http://vocab.getty.edu/tgn/{txt}")
+				n1 = model.Name(value=label)
+				n1.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+				where.identified_by = n1
 				to_serialize.append(where)
 
 			pltyp = typ.lower()
@@ -1267,7 +1269,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (57554) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (1415) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1285,7 +1287,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (57554) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (1415) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
