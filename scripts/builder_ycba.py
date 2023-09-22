@@ -1269,7 +1269,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (1415) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (585) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1287,7 +1287,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (1415) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (585) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1348,6 +1348,7 @@ for doc in lido:
 	# <lido:lidoRecID lido:source="Yale Center for British Art" lido:type="local">YCBA/lido-TMS-17</lido:lidoRecID>
 	fields = dom.xpath(f'{wrap}/lido:lido/lido:lidoRecID', namespaces=nss)
 	t = None
+	sysnum = None
 	#provEntry = None
 	for f in fields:
 		t = f.text 
@@ -1366,7 +1367,7 @@ for doc in lido:
 		att_ass.carried_out_by = ycbagroup
 		sysnum = vocab.SystemNumber(label="Local System Number", value=t)
 		sysnum.assigned_by = att_ass
-		what.identified_by = sysnum
+		#what.identified_by = sysnum #note: moved this below accession number
 
 	to_serialize.append(what)
 
@@ -1568,7 +1569,8 @@ for doc in lido:
 		if typ == "lux yuag visual item":
 			pclss = model.VisualItem
 			whatvi.equivalent = pclss(ident=value)
-
+		if t:
+			what.identified_by = sysnum
 	# repositorySet -- type is always current --> current owner
 	#      <lido:repositoryName>
 	#        <lido:legalBodyID lido:source="ULAN" lido:type="local">500303557</lido:legalBodyID>
