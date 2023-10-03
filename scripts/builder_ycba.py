@@ -991,6 +991,15 @@ def make_actor(a, source=""):
 
 	return (who, "serialize")
 
+def make_place_fromparams(tgn_uri,placename):
+	uu = map_uuid_uri(tgn_uri, automap = True)
+	where = model.Place(ident=urn_to_url_json(uu, "place"),label=placename)
+	where.equivalent = model.Place(ident=tgn_uri)
+	pn = vocab.PrimaryName(value=placename)
+	pn.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
+	where.identified_by = pn
+	return(where, "serialize")
+
 def make_place(elm, localid=None,issite=False):
 	# take a lido:place element and make a Place
 	# Check if we already have the place
@@ -1269,7 +1278,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (585) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (1162,7,65087) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1287,7 +1296,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (585) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (1162,7,65087) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1597,9 +1606,11 @@ for doc in lido:
 	done_owner = file_exists("group", owner)
 
 	# We need siteplace for the concat location tree
+	#hard code siteplace New Haven rather and Yale Center for British Art from LIDO
 	pop = './lido:objectIdentificationWrap/lido:repositoryWrap/lido:repositorySet/lido:repositoryLocation/lido:partOfPlace'
 	site = descMd.xpath(f'{pop}[./lido:namePlaceSet/lido:appellationValue/@lido:label="Site"]', namespaces=nss)[0]
-	(siteplace, srlz) = make_place(site, 'ycba:place/site',True)
+	(siteplace_building, srlz) = make_place(site, 'ycba:place/site',True)
+	(siteplace, srlz) = make_place_fromparams("http://vocab.getty.edu/tgn/7014210","New Haven")
 
 	if not done_owner or config2 == "do_site_everytime":
 		# This is boilerplate for owner and siteplace
@@ -1610,6 +1621,7 @@ for doc in lido:
 		n.language = vocab.Language(ident="http://vocab.getty.edu/aat/300388277", label="English")
 		owner.identified_by = n
 		owner.residence = siteplace
+		owner.residence = siteplace_building
 		actor_id_source[owner.id] = "pub"
 
 		ycbagroupuu = map_uuid("ycba", "actor/ycba_actor_1281")  # Yale Center for British Art by TMS con ID
@@ -1643,9 +1655,12 @@ for doc in lido:
 			owner.subject_of = lo
 		to_serialize.append(owner)
 		to_serialize.append(siteplace)
+		to_serialize.append(siteplace_building)
 
 	# This would be better fixed in the LIDO by nesting partOfPlace under site
+	#note 10/3/23 not vending Concatenated location descrition anyway
 	gallery = descMd.xpath(f'{pop}/lido:namePlaceSet/lido:appellationValue[@lido:label="Concatenated location description"]/text()', namespaces=nss)
+	gallery = None #adding this to bypass as not making buildings places not vending it anyway
 	if gallery:
 		bits = gallery[0].split(',')
 		bits = [x.lower().strip() for x in bits]
@@ -1664,7 +1679,7 @@ for doc in lido:
 			to_serialize.append(gal)
 			what.current_location = gal
 	else:
-		what.current_location = siteplace
+		what.current_location = siteplace_building
 
 	# eg ycba-14282
 	#  <lido:displayStateEditionWrap>
