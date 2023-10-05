@@ -1278,7 +1278,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (1162,7,65087) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (108,34) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1296,7 +1296,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (1162,7,65087) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (108,34) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1823,6 +1823,7 @@ for doc in lido:
 			actor_source = "exh" #ERJ override "life" to get an actor for exhibits
 
 			eid = event.xpath('./lido:eventID[@lido:type="local"]/text()', namespaces=nss)
+			e_url = event.xpath('./lido:eventID[@lido:type="ExhibitionURL"]/text()', namespaces=nss)
 			equiv_eid = event.xpath('./lido:eventID[@lido:type="LUX YUAG exhibition"]/text()', namespaces=nss)
 			edate = event.xpath('./lido:eventDate/lido:date/lido:earliestDate/text()', namespaces=nss)
 
@@ -1847,6 +1848,24 @@ for doc in lido:
 				sysnum = vocab.SystemNumber(value=exid)
 				sysnum.assigned_by = att_ass
 				eventobj.identified_by = sysnum
+				if e_url:
+					#print(f"e_url: {e_url[0]}")
+					#print(f"uu: {euu}")
+					#block of code to add an exhibitionURL
+					try:
+						hp = vocab.WebPage(label=f"Online home page for \"{exhlabel}\"")
+					except:
+						hp = vocab.WebPage(label=f"Online home page for exhibition")
+					hp.identified_by = vocab.PrimaryName(
+						content=f"View this record on the Yale Center for British Art website")
+					hp.format = "text/html"
+					hp.access_point = model.DigitalObject(ident=e_url[0].strip())
+					try:
+						lo = model.LinguisticObject(label=f"Home page for \"{exhlabel}\"")
+					except:
+						lo = model.LinguisticObject(label=f"Home page for exhibition")
+					lo.digitally_carried_by = hp
+					eventobj.subject_of = lo
 				to_serialize.append(eventobj)
 			# XXX Check if this is a second date for the same eventID
 			# if so make a parent exhibition
