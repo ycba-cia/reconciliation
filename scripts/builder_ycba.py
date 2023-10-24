@@ -116,6 +116,7 @@ vocab.register_vocab_class("GalleryLabel", {"parent": model.LinguisticObject, "i
 vocab.register_vocab_class("PubCatEntry", {"parent": model.LinguisticObject, "id": "300111999", "label": "Published Catalog Entry","metatype": "brief text"})
 vocab.register_vocab_class("CurComment", {"parent": model.LinguisticObject, "id": "300435416", "label": "Curatorial Comment","metatype": "brief text"})
 vocab.register_vocab_class("VisitorsStatement", {"parent": model.LinguisticObject, "id": "300025883", "label": "Visitors' Statement","metatype": "brief text"})
+vocab.register_vocab_class("ExhibitionsDescription", {"parent": model.LinguisticObject, "id": "300435424", "label": "Exhibitions Description","metatype": "brief text"})
 
 
 #supertypes
@@ -1278,7 +1279,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (108,34) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (22) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1296,7 +1297,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (108,34) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (22) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1824,8 +1825,9 @@ for doc in lido:
 
 			eid = event.xpath('./lido:eventID[@lido:type="local"]/text()', namespaces=nss)
 			e_url = event.xpath('./lido:eventID[@lido:type="ExhibitionURL"]/text()', namespaces=nss)
-			equiv_eid = event.xpath('./lido:eventID[@lido:type="LUX YUAG exhibition"]/text()', namespaces=nss)
+			equiv_eids = event.xpath('./lido:eventID[@lido:type="LUX exhibition"]/text()', namespaces=nss)
 			edate = event.xpath('./lido:eventDate/lido:date/lido:earliestDate/text()', namespaces=nss)
+			edescs = event.xpath('./lido:eventDescriptionSet', namespaces=nss)
 
 			if stmt:
 				exhlabel = stmt[0]
@@ -1873,10 +1875,20 @@ for doc in lido:
 				#does this ever happen?
 				eventobj = vocab.Exhibition(ident=AUTO_URI,label=exhlabel)
 				# no id to match against :(
-			if equiv_eid:
+			for equiv_eid in equiv_eids:
 				equiv_act = model.Activity
-				equiv_act_id = equiv_eid[0].replace("\n","")
+				equiv_act_id = equiv_eid.replace("\n","").strip()
 				eventobj.equivalent = equiv_act(ident=equiv_act_id)
+			for edesc in edescs:
+				noteid = edesc.xpath('./lido:descriptiveNoteID/text()', namespaces=nss)[0]
+				notevalue = edesc.xpath('./lido:descriptiveNoteValue/text()', namespaces=nss)[0]
+				notesource = edesc.xpath('./lido:sourceDescriptiveNote/text()', namespaces=nss)[0]
+				notevaluesource = notevalue + " --- ---\n\n" + notesource
+				if noteid == "300435424": #exhibitions description
+					exhdesc = vocab.ExhibitionsDescription(value=notevaluesource)
+					exhdesc.identified_by = model.Name(value="Exhibition Description")
+					eventobj.referred_to_by = exhdesc
+					#print(notevalue)
 			k = f"exhibitset-{exid}"
 			v = f"Exhibit set for \"{eventobj._label}\""
 			setuu = map_uuid("ycba", f"set/{k}")
