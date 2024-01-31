@@ -1279,7 +1279,7 @@ db = pymysql.connect(host = "oaipmh-prod.ctsmybupmova.us-east-1.rds.amazonaws.co
 cursor = db.cursor()
 
 if config1 == "test":
-	sql = "select local_identifier, xml from metadata_record where local_identifier in (54430) and status != 'deleted' order by cast(local_identifier as signed) asc"
+	sql = "select local_identifier, xml from metadata_record where local_identifier in (58535,366,947,82154,258) and status != 'deleted' order by cast(local_identifier as signed) asc"
 	#sql = ""
 else:
 	sql = "select local_identifier, xml from metadata_record where status != 'deleted' order by cast(local_identifier as signed) asc"
@@ -1297,7 +1297,7 @@ except:
 
 if config1 == "test":
 	#sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (34,107,5005,38526,17820,22010,22023,425,11602,82154) order by cast(local_identifier as signed) asc"
-	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (54430) order by cast(local_identifier as signed) asc"
+	sql = "SELECT local_identifier,set_spec FROM record_set_map where local_identifier in (58535,366,947,82154,258) order by cast(local_identifier as signed) asc"
 else:
 	sql = "SELECT local_identifier,set_spec FROM record_set_map order by cast(local_identifier as signed) asc"
 id_and_set = {}
@@ -1483,11 +1483,20 @@ for doc in lido:
 			aeonItemTitle = value[:254] #cap length of http param
 		pref = f.xpath('./lido:appellationValue/@lido:pref', namespaces=nss)[0]
 		lang = f.xpath('./lido:appellationValue/@xml:lang', namespaces=nss)
+		source = f.xpath('./lido:sourceAppellation/text()', namespaces=nss)
 		if lang:
 			lang = lang[0]
 		else:
 			lang = "eng"
 		n = model.Name(value=value)
+		if source and source[0].startswith("["):
+			source = source[0]
+			if not pref == "preferred":
+				n = model.Name(value=value + " " + source)
+			else:
+				n_source = model.Name(value=value + " " + source)
+				n_source.classified_as = model.Type(ident="http://vocab.getty.edu/aat/300417227", label="Alternate title")
+				what.identified_by = n_source
 		what.identified_by = n
 		if not hasattr(what, '_label'):
 			what._label = value
@@ -1780,7 +1789,7 @@ for doc in lido:
 			provnote = vocab.ProvenanceStatement()
 			stmt = f'<span class=\"lux_data\">{stmt[0]}</span>'
 			provnote.content = stmt.replace("\n", "</br>").replace("\\n", "").replace("---", "")
-			what.referred_to_by = provnote
+			#what.referred_to_by = provnote #TEMP remove provnote 1/30/2024
 			#if provEntry is not None:
 				#provEntry.referred_to_by = provnote
 		elif etyp == "300048722":
